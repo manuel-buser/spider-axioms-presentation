@@ -28,6 +28,7 @@
      SLIDE 1, Title
      ===================================================================== -->
 <section class="slide slide--title" data-slide="0">
+  <a class="back-to-projects" href="/projects">&#8592; Back to projects</a>
   <div class="title-grid">
     <div class="title-text">
       <p class="eyebrow">Knowledge, Reasoning and Planning Seminar, HS25</p>
@@ -40,7 +41,7 @@
       <p class="meta">University of Basel</p>
     </div>
     <div class="title-info-card">
-      <h3>What is this?</h3>
+      <h3>Project Overview</h3>
       <p>
         Final presentation for the Knowledge, Reasoning and Planning
         seminar at the University of Basel (HS25). The project compares
@@ -61,8 +62,7 @@
      ===================================================================== -->
 <section class="slide" data-slide="1">
   <header class="slide-header">
-    <p class="eyebrow">Background</p>
-    <h2>What is this about?</h2>
+    <h2>Background</h2>
     <hr class="accent-rule" />
   </header>
 
@@ -144,7 +144,7 @@
         <span class="cmp-hint">conditional-effects, derived-predicates</span>
       </summary>
       <p class="cmp-caption">
-        The single-line declaration that switches the compilation strategy.
+        Changes in the requirements section.
       </p>
       <div class="cmp-cols">
         <pre class="code code--noax"><code>(:requirements
@@ -169,10 +169,10 @@
         <span class="cmp-hint">conditional effects, direct effects only</span>
       </summary>
       <p class="cmp-caption">
-        Every move in the no-axioms version plants propagation markers. The
-        axiom version drops those, the planner re-derives
-        <code>movable</code> and <code>part-of-tableau</code> from the
-        rules.
+        Every move in the no-axioms version plants propagation markers.
+        The axiom version drops those; the planner evaluates
+        <code>movable</code> and <code>part-of-tableau</code> at every
+        state from their derivation rules.
       </p>
       <div class="cmp-cols">
         <pre class="code code--noax"><code>(:action move-to-card
@@ -316,10 +316,16 @@
   :parameters (?c - card ?tbefore - tableau
                ?t - tableau)  ...)
 
-;; plus the make-part-of-tableau marker
-;; predicate, the currently-updating-*
-;; flag, and gating preconditions on
-;; every real action.</code></pre>
+;; The shown action is only one of two
+;; change-tableau-* propagation actions.
+;; The encoding also needs:
+;;   - a marker predicate
+;;     make-part-of-tableau
+;;   - a flag
+;;     currently-updating-part-of-tableau
+;;   - a precondition on every real action
+;;     that blocks moves until propagation
+;;     has finished</code></pre>
         <pre class="code code--ax"><code>(:derived (part-of-tableau
               ?c - card  ?t - tableau)
   (or
@@ -337,27 +343,6 @@
       </div>
     </details>
 
-  </div>
-
-  <div class="code-summary">
-    <h3 class="code-summary-title">Domain size, lines of PDDL</h3>
-    <div class="size-row">
-      <span class="size-name">no-axioms</span>
-      <div class="size-track">
-        <div class="size-fill noax" style="width:100%"></div>
-        <span class="size-value">436</span>
-      </div>
-    </div>
-    <div class="size-row">
-      <span class="size-name">axioms</span>
-      <div class="size-track">
-        <div class="size-fill ax" style="width:69%"></div>
-        <span class="size-value">301</span>
-      </div>
-    </div>
-    <p class="code-summary-caption">
-      31% shorter, 135 fewer lines.
-    </p>
   </div>
 </section>
 
