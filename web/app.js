@@ -572,7 +572,7 @@ function drawOperatorsChart(host) {
     "text-anchor": "middle",
     "font-size": 10,
   });
-  yTitle.textContent = "grounded operators (log scale)";
+  yTitle.textContent = "grounded actions (log scale)";
   svg.appendChild(yTitle);
 
   let xCursor = M.l;

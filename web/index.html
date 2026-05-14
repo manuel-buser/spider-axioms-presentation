@@ -432,7 +432,7 @@
     <hr class="accent-rule" />
     <p class="lede">
       Fast Downward<button class="info-btn" data-info="fast-downward" aria-label="What is Fast Downward?">i</button>,
-      13 instances, 5 min / 4 GB budget.
+      5 min / 4 GB budget per instance.
     </p>
   </header>
 
@@ -443,14 +443,13 @@
       </figcaption>
       <div id="chart-operators" class="chart-host"></div>
       <p class="chart-legend">
-        <span class="swatch swatch--noax"></span> No-axioms encoding (compiled)
+        <span class="swatch swatch--noax"></span> No-axioms encoding
         &nbsp;&nbsp;
-        <span class="swatch swatch--ax"></span> Axioms encoding (derived predicates)
+        <span class="swatch swatch--ax"></span> Axioms encoding
       </p>
       <p class="chart-caption">
-        <strong>Lower is better.</strong>
-        Across all 13 instances the axioms encoding produces about half as
-        many grounded operators.
+        Across all instances the axioms encoding produces about half as
+        many grounded actions.
       </p>
     </figure>
 
@@ -465,22 +464,12 @@
         <span class="swatch swatch--ax"></span> Axioms, A* + h<sup>max</sup> heuristic
       </p>
       <p class="chart-caption">
-        <strong>Lower is faster.</strong> Both find the same optimal cost on
-        every solved instance. The axioms encoding reaches it
+        Both find the same optimal cost on every solved instance. The
+        axioms encoding reaches it
         <strong>4 to 9 times quicker</strong>.
       </p>
     </figure>
   </div>
-
-  <p class="results-footnote">
-    Satisficing (LAMA, 5 min): <strong>axioms 5 / 5</strong> vs
-    <strong>no-axioms 3 / 5</strong>.&nbsp;&nbsp;
-    Heuristics: <em>blind</em> applies no guidance,
-    <em>LM-cut</em> and <em>h<sup>max</sup></em> are admissible heuristics.
-    LM-cut is more informative but does not natively support axioms in this
-    Fast Downward<button class="info-btn" data-info="fast-downward" aria-label="What is Fast Downward?">i</button>
-    build.
-  </p>
 
 </section>
 
