@@ -70,6 +70,14 @@ const INFO_ENTRIES = {
       href:  "https://www.fast-downward.org/latest/",
     },
   },
+  "about-site": {
+    title: "About this site",
+    body:
+      "This presentation site (HTML, CSS, JS, deployment scripts, nginx " +
+      "config) and parts of the supporting tooling were written with " +
+      "Claude Code (Anthropic). All PDDL modelling and experimental " +
+      "results are the author's own work.",
+  },
 };
 const popover = document.getElementById("info-popover");
 let popoverAnchor = null;

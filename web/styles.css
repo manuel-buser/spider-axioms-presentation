@@ -641,6 +641,12 @@ a:hover { color: var(--grad-3); text-decoration: underline; }
   color: var(--soft-ink);
 }
 .chart-caption strong { color: var(--ink); }
+.chart-note {
+  margin: 0.4rem 0 0;
+  font-size: 0.88rem;
+  color: var(--soft-ink);
+}
+.chart-note strong { color: var(--ink); }
 
 .results-footnote {
   max-width: 1280px;
@@ -689,6 +695,31 @@ a:hover { color: var(--grad-3); text-decoration: underline; }
   transition: background 120ms ease, color 120ms ease;
 }
 .info-btn:hover { background: var(--grad-1); color: #fff; }
+
+.about-site-btn {
+  position: fixed;
+  top: 1.4rem;
+  right: 2rem;
+  width: auto;
+  height: auto;
+  margin-left: 0;
+  padding: 0.5rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  color: var(--soft-ink);
+  font-family: inherit;
+  font-style: normal;
+  font-size: 0.85rem;
+  font-weight: 500;
+  z-index: 25;
+  transition: border-color 150ms ease, color 150ms ease;
+}
+.about-site-btn:hover {
+  background: var(--surface);
+  border-color: var(--grad-1);
+  color: var(--ink);
+}
 
 #info-popover {
   position: absolute;
