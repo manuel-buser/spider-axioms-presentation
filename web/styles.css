@@ -228,8 +228,8 @@ a:hover { color: var(--grad-3); text-decoration: underline; }
 }
 
 .title-info-card {
-  margin-top: 1.4rem;
-  padding: 0.95rem 1.1rem 1.05rem;
+  align-self: center;
+  padding: 1.1rem 1.3rem 1.2rem;
   background: var(--surface);
   border: 1px solid var(--rule);
   border-left: 3px solid var(--grad-1);
@@ -383,6 +383,18 @@ a:hover { color: var(--grad-3); text-decoration: underline; }
 }
 .code--noax { background: var(--noax-bg); border-color: var(--noax-border); }
 .code--ax   { background: var(--ax-bg);   border-color: var(--ax-border); }
+
+/* Summary badges at the bottom of slide 3 */
+.code-summary {
+  margin: 1.6rem auto 0;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+.code-summary .badge {
+  font-size: clamp(0.92rem, 1.1vw, 1.05rem);
+}
 
 /* ==========================================================================
    SLIDE 4, live demo
