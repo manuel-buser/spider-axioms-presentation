@@ -238,7 +238,7 @@ def main() -> int:
         if not Path(root, "domain.pddl").is_file():
             print(f"WARNING: {enc} domain.pddl not found at {root}", file=sys.stderr)
 
-    with ThreadedServer(("0.0.0.0", PORT), Handler) as srv:
+    with ThreadedServer(("127.0.0.1", PORT), Handler) as srv:
         print(f"Spider-axioms presentation server")
         print(f"  static root : {STATIC_ROOT}")
         print(f"  FD script   : {FD_SCRIPT}")
