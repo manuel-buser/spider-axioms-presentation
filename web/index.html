@@ -33,11 +33,10 @@
       <p class="eyebrow">Knowledge, Reasoning and Planning Seminar, HS25</p>
       <h1 class="gradient-text">Spider with Axioms</h1>
       <p class="subtitle">
-        Rewriting an IPC-2018 Solitaire domain with PDDL derived predicates
+        Rewriting an existing domain in PDDL with axioms
       </p>
       <hr class="accent-rule" />
       <p class="author">Manuel Buser</p>
-      <p class="meta">Supervisor: Florian Pommerening</p>
       <p class="meta">University of Basel</p>
     </div>
     <div class="title-info-card">
@@ -111,10 +110,12 @@
     <div class="intro-card">
       <h3>What did we do?</h3>
       <p>
-        Took the 2018 IPC Spider domain and rewrote it using PDDL derived
-        predicates (<code>:derived-predicates</code>) instead of eight
-        zero-cost propagation actions and four control flags. The two
-        domains describe the same problem.
+        Took the
+        <a href="https://github.com/aibasel/downward-benchmarks/blob/master/spider-opt18-strips/domain.pddl" target="_blank" rel="noopener">2018 IPC Spider domain</a>
+        and rewrote it using PDDL derived predicates
+        (<code>:derived-predicates</code>) instead of eight zero-cost
+        propagation actions and four control flags. The two domains
+        describe the same problem.
       </p>
     </div>
   </div>
@@ -339,8 +340,24 @@
   </div>
 
   <div class="code-summary">
-    <div class="badge badge--noax">no-axioms, 436 lines</div>
-    <div class="badge badge--ax">axioms, 301 lines</div>
+    <h3 class="code-summary-title">Domain size, lines of PDDL</h3>
+    <div class="size-row">
+      <span class="size-name">no-axioms</span>
+      <div class="size-track">
+        <div class="size-fill noax" style="width:100%"></div>
+        <span class="size-value">436</span>
+      </div>
+    </div>
+    <div class="size-row">
+      <span class="size-name">axioms</span>
+      <div class="size-track">
+        <div class="size-fill ax" style="width:69%"></div>
+        <span class="size-value">301</span>
+      </div>
+    </div>
+    <p class="code-summary-caption">
+      31% shorter, 135 fewer lines.
+    </p>
   </div>
 </section>
 
@@ -357,6 +374,8 @@
       <code>fast-downward.py</code><button class="info-btn" data-info="fast-downward" aria-label="What is Fast Downward?">i</button>
       on <strong>opt p09</strong> with <code>A*(blind())</code>.
       Streaming live from the server.
+      More on the planner is at
+      <a href="https://www.fast-downward.org/latest/" target="_blank" rel="noopener">fast-downward.org</a>.
     </p>
   </header>
 
