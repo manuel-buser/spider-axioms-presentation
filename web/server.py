@@ -63,20 +63,25 @@ SEARCHES = {
 # FD stdout parsing
 # ---------------------------------------------------------------------------
 
-_RE_PLAN_COST   = re.compile(r"Plan cost:\s*(\d+)")
-_RE_PLAN_LEN    = re.compile(r"Plan length:\s*(\d+)")
-_RE_EXPANDED    = re.compile(r"Expanded\s+(\d+)\s+state")
-_RE_TOTAL_TIME  = re.compile(r"Total time:\s*([\d.]+)\s*s")
-_RE_SEARCH_TIME = re.compile(r"Search time:\s*([\d.]+)\s*s")
+_RE_PLAN_COST    = re.compile(r"Plan cost:\s*(\d+)")
+_RE_PLAN_LEN     = re.compile(r"Plan length:\s*(\d+)")
+_RE_EXPANDED     = re.compile(r"Expanded\s+(\d+)\s+state")
+_RE_TOTAL_TIME   = re.compile(r"Total time:\s*([\d.]+)\s*s")
+_RE_SEARCH_TIME  = re.compile(r"Search time:\s*([\d.]+)\s*s")
+# "Planner time" is reported by the driver and includes translation,
+# preprocessing, search and cleanup. This is what the audience sees as the
+# bottom-of-terminal "INFO Planner time: XX.XXs" line.
+_RE_PLANNER_TIME = re.compile(r"Planner time:\s*([\d.]+)\s*s")
 
 
 def update_summary(summary: dict, line: str) -> None:
     for pat, key, cast in [
-        (_RE_PLAN_COST,   "cost",        int),
-        (_RE_PLAN_LEN,    "length",      int),
-        (_RE_EXPANDED,    "expanded",    int),
-        (_RE_TOTAL_TIME,  "total_time",  float),
-        (_RE_SEARCH_TIME, "search_time", float),
+        (_RE_PLAN_COST,    "cost",         int),
+        (_RE_PLAN_LEN,     "length",       int),
+        (_RE_EXPANDED,     "expanded",     int),
+        (_RE_TOTAL_TIME,   "total_time",   float),
+        (_RE_SEARCH_TIME,  "search_time",  float),
+        (_RE_PLANNER_TIME, "planner_time", float),
     ]:
         m = pat.search(line)
         if m:

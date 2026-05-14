@@ -322,14 +322,14 @@ async function startRace() {
       } else if (eventName === "done") {
         raceState.results[id] = data;
         raceState.finished.add(id);
-        timerEl.textContent = fmtTime(data.total_time ?? data.wall_clock);
+        timerEl.textContent = fmtTime(data.planner_time ?? data.total_time ?? data.wall_clock);
         if (raceState.finished.size === 2) {
           clearInterval(tickerId);
           btnReset.hidden = false;
           btnRun.disabled = false;
           renderComparison(raceState.results);
-          const tNoax = raceState.results.noaxioms?.total_time ?? raceState.results.noaxioms?.wall_clock;
-          const tAx   = raceState.results.axioms?.total_time   ?? raceState.results.axioms?.wall_clock;
+          const tNoax = raceState.results.noaxioms?.planner_time ?? raceState.results.noaxioms?.total_time ?? raceState.results.noaxioms?.wall_clock;
+          const tAx   = raceState.results.axioms?.planner_time   ?? raceState.results.axioms?.total_time   ?? raceState.results.axioms?.wall_clock;
           if (tNoax && tAx) {
             const speedup = tNoax / tAx;
             statusEl.textContent =
@@ -390,8 +390,8 @@ function renderComparison(results) {
   const subline  = document.getElementById("compare-subline");
   if (!grid) return;
 
-  const tNoax = noax.total_time ?? noax.wall_clock;
-  const tAx   = ax.total_time   ?? ax.wall_clock;
+  const tNoax = noax.planner_time ?? noax.total_time ?? noax.wall_clock;
+  const tAx   = ax.planner_time   ?? ax.total_time   ?? ax.wall_clock;
   if (tNoax && tAx) {
     const ratio = tNoax / tAx;
     if (ratio >= 1.05) {
@@ -408,10 +408,10 @@ function renderComparison(results) {
     "horizontal bars are scaled relative to the larger value, raw numbers shown inside each bar";
 
   const rows = [
-    { label: "Total time",  noax: tNoax,            ax: tAx,          fmt: (v) => v != null ? `${v.toFixed(2)} s` : "-", lowerIsBetter: true },
-    { label: "Plan cost",   noax: noax.cost,        ax: ax.cost,      fmt: (v) => v != null ? `${v}` : "-",              lowerIsBetter: null  },
-    { label: "Plan length", noax: noax.length,      ax: ax.length,    fmt: (v) => v != null ? `${v}` : "-",              lowerIsBetter: true },
-    { label: "Expanded",    noax: noax.expanded,    ax: ax.expanded,  fmt: (v) => v != null ? v.toLocaleString() : "-",  lowerIsBetter: true },
+    { label: "Planner time", noax: tNoax,         ax: tAx,         fmt: (v) => v != null ? `${v.toFixed(2)} s` : "-", lowerIsBetter: true },
+    { label: "Plan cost",    noax: noax.cost,     ax: ax.cost,     fmt: (v) => v != null ? `${v}` : "-",              lowerIsBetter: null  },
+    { label: "Plan length",  noax: noax.length,   ax: ax.length,   fmt: (v) => v != null ? `${v}` : "-",              lowerIsBetter: true },
+    { label: "Expanded",     noax: noax.expanded, ax: ax.expanded, fmt: (v) => v != null ? v.toLocaleString() : "-",  lowerIsBetter: true },
   ];
 
   grid.innerHTML = "";
