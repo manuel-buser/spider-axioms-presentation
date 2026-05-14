@@ -3,31 +3,35 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Spider with Axioms , KR Seminar HS25</title>
+<title>Spider with Axioms, Knowledge, Reasoning and Planning Seminar HS25</title>
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
 <!-- =========================================================================
-     Top progress dots
+     Labelled top navigation
      ===================================================================== -->
-<nav id="dots" aria-label="Slide navigation">
-  <button class="dot" data-target="0" aria-label="Slide 1"></button>
-  <button class="dot" data-target="1" aria-label="Slide 2"></button>
-  <button class="dot" data-target="2" aria-label="Slide 3"></button>
-  <button class="dot" data-target="3" aria-label="Slide 4"></button>
+<nav id="nav" aria-label="Slide navigation">
+  <button class="nav-tab" data-target="0"><span class="nav-num">1</span> Title</button>
+  <button class="nav-tab" data-target="1"><span class="nav-num">2</span> Background</button>
+  <button class="nav-tab" data-target="2"><span class="nav-num">3</span> Code</button>
+  <button class="nav-tab" data-target="3"><span class="nav-num">4</span> Demo</button>
+  <button class="nav-tab" data-target="4"><span class="nav-num">5</span> Results</button>
 </nav>
+
+<button class="nav-arrow left"  id="nav-prev" aria-label="Previous slide">&#8592;</button>
+<button class="nav-arrow right" id="nav-next" aria-label="Next slide">&#8594;</button>
 
 <main id="deck">
 
 <!-- =========================================================================
-     SLIDE 1 , Title
+     SLIDE 1, Title
      ===================================================================== -->
 <section class="slide slide--title" data-slide="0">
   <div class="title-grid">
     <div class="title-text">
-      <p class="eyebrow">Knowledge, Reasoning and Planning Seminar · HS25</p>
-      <h1>Spider with Axioms</h1>
+      <p class="eyebrow">Knowledge, Reasoning and Planning Seminar, HS25</p>
+      <h1 class="gradient-text">Spider with Axioms</h1>
       <p class="subtitle">
         Rewriting an IPC-2018 Solitaire domain with PDDL derived predicates
       </p>
@@ -37,39 +41,104 @@
       <p class="meta">University of Basel</p>
     </div>
     <div class="title-stack">
-      <div class="badge badge--noax">no-axioms · 436 lines</div>
-      <div class="badge badge--ax">axioms · 301 lines</div>
-      <p class="badge-caption">smaller domain · half the operators</p>
+      <div class="badge badge--noax">no-axioms, 436 lines</div>
+      <div class="badge badge--ax">axioms, 301 lines</div>
+      <p class="badge-caption">smaller domain, half the actions</p>
+    </div>
+  </div>
+  <a class="report-link" href="report.pdf" target="_blank" rel="noopener">
+    &#x2193; Download the final report (PDF)
+  </a>
+</section>
+
+<!-- =========================================================================
+     SLIDE 2, Background / Introduction
+     ===================================================================== -->
+<section class="slide" data-slide="1">
+  <header class="slide-header">
+    <p class="eyebrow">Background</p>
+    <h2>What is this about?</h2>
+    <hr class="accent-rule" />
+    <p class="lede">
+      A short introduction for visitors who are not in the seminar audience.
+    </p>
+  </header>
+
+  <div class="intro-grid">
+    <div class="intro-card">
+      <h3>What is this?</h3>
+      <p>
+        Final presentation for the Knowledge, Reasoning and Planning seminar
+        at the University of Basel (HS25). The project compares two PDDL
+        encodings of the same Solitaire planning problem.
+      </p>
+    </div>
+
+    <div class="intro-card">
+      <h3>What is Spider Solitaire?</h3>
+      <p>
+        A single-player card game. Cards sit on a tableau of piles. The goal
+        is to remove every card by building same-suit Ace-to-King runs.
+      </p>
+      <svg class="intro-svg" viewBox="0 0 220 80" aria-hidden="true">
+        <g stroke="#94a3b8" fill="#1a1825" stroke-width="1">
+          <rect x="6"   y="14" width="56" height="46" rx="4"/>
+          <rect x="82"  y="14" width="56" height="46" rx="4"/>
+          <rect x="158" y="14" width="56" height="46" rx="4"/>
+        </g>
+        <g fill="#cbd5e1" font-family="monospace" font-size="13" text-anchor="middle">
+          <text x="34"  y="42">K&#9829;</text>
+          <text x="110" y="42">Q&#9824;</text>
+          <text x="186" y="42">A&#9830;</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="intro-card">
+      <h3>What is PDDL?</h3>
+      <p>
+        The Planning Domain Definition Language, a formal language for
+        describing planning problems. Used by the International Planning
+        Competition (IPC) and most academic planning research.
+      </p>
+    </div>
+
+    <div class="intro-card">
+      <h3>What did we do?</h3>
+      <p>
+        Took the 2018 IPC Spider domain and rewrote it using PDDL derived
+        predicates (<code>:derived-predicates</code>) instead of eight
+        zero-cost propagation actions and four control flags. The two
+        domains describe the same problem.
+      </p>
     </div>
   </div>
 </section>
 
 <!-- =========================================================================
-     SLIDE 2 , Code comparisons (accordion)
+     SLIDE 3, Code comparisons (accordion)
      ===================================================================== -->
-<section class="slide" data-slide="1">
+<section class="slide" data-slide="2">
   <header class="slide-header">
     <p class="eyebrow">The rewrite</p>
     <h2>What changes in the PDDL?</h2>
     <hr class="accent-rule" />
     <p class="lede">
       Click a row to expand the side-by-side. Each row shows the no-axioms
-      original (coral) next to the axiom-based replacement (teal).
+      original (red) next to the axiom-based replacement (green).
     </p>
   </header>
 
   <div class="accordion">
 
-    <!-- Section 1 , requirements line -->
     <details class="cmp" open>
       <summary>
         <span class="cmp-num">1</span>
         <span class="cmp-title">The <code>:requirements</code> line</span>
-        <span class="cmp-hint">conditional-effects → derived-predicates</span>
+        <span class="cmp-hint">conditional-effects, derived-predicates</span>
       </summary>
       <p class="cmp-caption">
-        The single-line declaration that switches the whole compilation
-        strategy. Everything else follows from this.
+        The single-line declaration that switches the compilation strategy.
       </p>
       <div class="cmp-cols">
         <pre class="code code--noax"><code>(:requirements
@@ -87,18 +156,17 @@
       </div>
     </details>
 
-    <!-- Section 2 , move-to-card action -->
     <details class="cmp">
       <summary>
         <span class="cmp-num">2</span>
         <span class="cmp-title">The <code>move-to-card</code> action</span>
-        <span class="cmp-hint">conditional effects → direct effects only</span>
+        <span class="cmp-hint">conditional effects, direct effects only</span>
       </summary>
       <p class="cmp-caption">
-        Every real move in the no-axioms version <em>also</em> has to plant
-        propagation markers. The axiom version drops all that , the planner
-        re-derives <code>movable</code> / <code>part-of-tableau</code> on its
-        own.
+        Every move in the no-axioms version plants propagation markers. The
+        axiom version drops those, the planner re-derives
+        <code>movable</code> and <code>part-of-tableau</code> from the
+        rules.
       </p>
       <div class="cmp-cols">
         <pre class="code code--noax"><code>(:action move-to-card
@@ -149,18 +217,16 @@
       </div>
     </details>
 
-    <!-- Section 3 , propagation chain vs derived predicate -->
     <details class="cmp">
       <summary>
         <span class="cmp-num">3</span>
         <span class="cmp-title">Propagating <code>movable</code></span>
-        <span class="cmp-hint">8 zero-cost actions → 1 derived predicate</span>
+        <span class="cmp-hint">8 zero-cost actions, 1 derived predicate</span>
       </summary>
       <p class="cmp-caption">
-        This is the heart of the rewrite. The eight propagation actions on
-        the left simulate a fixed-point evaluation. The axiom on the right
-        <em>is</em> that fixed-point evaluation , the planner does it
-        natively at every state.
+        The eight propagation actions on the left simulate a fixed-point
+        evaluation. The axiom on the right defines the same fixed-point
+        declaratively. The planner evaluates it at every state.
       </p>
       <div class="cmp-cols">
         <pre class="code code--noax"><code>(:action make-movable-and-continue
@@ -188,9 +254,9 @@
 
 ;; plus change-tableau-and-continue,
 ;;      change-tableau-and-stop
-;; , 8 zero-cost actions in total,
-;;   plus 4 control fluents and 3 marker
-;;   predicates to gate them.</code></pre>
+;; 8 zero-cost actions in total,
+;; plus 4 control fluents and 3 marker
+;; predicates to gate them.</code></pre>
         <pre class="code code--ax"><code>(:derived (movable ?c - card)
   (and
     (in-play ?c)
@@ -202,28 +268,27 @@
              (CAN-CONTINUE-GROUP ?above ?c))))))
 
 
-;; Read this aloud:
-;;   "a card is movable if it is in play
-;;    and either it's on top, or some
-;;    movable card directly above it
-;;    continues its group."
+;; In words: a card is movable if it is
+;; in play, and either it is clear, or
+;; some movable card directly above it
+;; continues its group.
 ;;
 ;; The recursion (movable ?above) is the
-;; fixed-point that the eight actions on
-;; the left simulate by hand.</code></pre>
+;; fixed-point the eight actions on the
+;; left simulate by hand.</code></pre>
       </div>
     </details>
 
-    <!-- Section 4 , transitive closure -->
     <details class="cmp">
       <summary>
         <span class="cmp-num">4</span>
         <span class="cmp-title">Transitive closure: <code>part-of-tableau</code></span>
-        <span class="cmp-hint">propagation actions → 4-line axiom</span>
+        <span class="cmp-hint">propagation actions, 4-line axiom</span>
       </summary>
       <p class="cmp-caption">
-        Same shape as section 3, for "which tableau does this card belong to?".
-        The axiom is the textbook one-rule definition of transitive closure.
+        Same shape as section 3, applied to "which tableau does this card
+        belong to". The axiom is the standard one-rule definition of
+        transitive closure.
       </p>
       <div class="cmp-cols">
         <pre class="code code--noax"><code>(:action change-tableau-and-continue
@@ -258,9 +323,9 @@
            (part-of-tableau ?y ?t)))))
 
 
-;; "card c is part of tableau t if it is
-;;  directly on t, or it is on some card y
-;;  that is already part of t."
+;; Card c is part of tableau t if it is
+;; directly on t, or it is on some card y
+;; that is already part of t.
 ;;
 ;; A four-line transitive closure.</code></pre>
       </div>
@@ -270,61 +335,90 @@
 </section>
 
 <!-- =========================================================================
-     SLIDE 3 , Live demo
+     SLIDE 4, Live demo
      ===================================================================== -->
-<section class="slide" data-slide="2">
+<section class="slide" data-slide="3">
   <header class="slide-header">
     <p class="eyebrow">Live demo</p>
-    <h2>Same instance · two encodings · one race</h2>
+    <h2>Same instance, two encodings, one race</h2>
     <hr class="accent-rule" />
     <p class="lede">
-      Both terminals run <code>fast-downward.py</code> on
-      <strong>opt&nbsp;p09</strong> with <code>A*(blind())</code>.
-      Streaming live from WSL.
+      Both terminals run
+      <code>fast-downward.py</code><button class="info-btn" data-info="fast-downward" aria-label="What is Fast Downward?">i</button>
+      on <strong>opt p09</strong> with <code>A*(blind())</code>.
+      Streaming live from the server.
     </p>
   </header>
 
+  <div class="task-card">
+    <div class="task-section">
+      <h4>Task</h4>
+      <p class="task-row"><span class="k">Instance</span> <code>opt_p09</code></p>
+      <p class="task-row"><span class="k">Search</span> <code>A*(blind())</code>, optimal, no heuristic guidance</p>
+      <p class="task-row"><span class="k">Equivalence check</span> both encodings must reach the same plan cost</p>
+    </div>
+    <div class="task-section">
+      <h4>Source code</h4>
+      <p class="task-row">
+        <a href="https://github.com/manuel-buser/Seminar_Knowledge_Reasoning_Planning_Project/blob/master/Spider_NoAxioms/domain.pddl" target="_blank" rel="noopener">no-axioms domain.pddl &#x2197;</a>
+      </p>
+      <p class="task-row">
+        <a href="https://github.com/manuel-buser/Seminar_Knowledge_Reasoning_Planning_Project/blob/master/Spider_Axioms/domain.pddl" target="_blank" rel="noopener">axioms domain.pddl &#x2197;</a>
+      </p>
+      <p class="task-row">
+        <a href="https://github.com/manuel-buser/Seminar_Knowledge_Reasoning_Planning_Project/blob/master/Spider_Axioms/instances/opt_p09.pddl" target="_blank" rel="noopener">opt_p09 instance &#x2197;</a>
+      </p>
+    </div>
+  </div>
+
   <div class="demo-controls">
-    <button id="demo-run" class="btn-primary">▶ Start race</button>
+    <button id="demo-run" class="btn-primary">&#9654; Start race</button>
     <button id="demo-reset" class="btn-secondary" hidden>Reset</button>
     <span id="demo-status" class="demo-status"></span>
   </div>
 
   <div class="demo-grid">
-    <!-- left pane -->
     <div class="demo-pane" id="pane-noax">
       <div class="pane-header pane-header--noax">
-        <span class="pane-title">no-axioms · A* + blind</span>
+        <span class="pane-title">
+          no-axioms, A* + blind
+          <a href="https://github.com/manuel-buser/Seminar_Knowledge_Reasoning_Planning_Project/blob/master/Spider_NoAxioms/domain.pddl" target="_blank" rel="noopener">&#x2197; source</a>
+        </span>
         <span class="pane-timer" data-role="timer">0.00 s</span>
       </div>
-      <pre class="pane-term" data-role="term"
-           aria-label="no-axioms output"></pre>
-      <div class="pane-summary" data-role="summary" hidden></div>
+      <pre class="pane-term" data-role="term" aria-label="no-axioms output"></pre>
     </div>
 
-    <!-- right pane -->
     <div class="demo-pane" id="pane-ax">
       <div class="pane-header pane-header--ax">
-        <span class="pane-title">axioms · A* + blind</span>
+        <span class="pane-title">
+          axioms, A* + blind
+          <a href="https://github.com/manuel-buser/Seminar_Knowledge_Reasoning_Planning_Project/blob/master/Spider_Axioms/domain.pddl" target="_blank" rel="noopener">&#x2197; source</a>
+        </span>
         <span class="pane-timer" data-role="timer">0.00 s</span>
       </div>
-      <pre class="pane-term" data-role="term"
-           aria-label="axioms output"></pre>
-      <div class="pane-summary" data-role="summary" hidden></div>
+      <pre class="pane-term" data-role="term" aria-label="axioms output"></pre>
     </div>
+  </div>
+
+  <div class="compare-panel" id="compare-panel">
+    <div class="compare-headline" id="compare-headline">axioms is X faster</div>
+    <p class="compare-subline" id="compare-subline">comparison across the four reported metrics</p>
+    <div class="compare-grid" id="compare-grid"></div>
   </div>
 </section>
 
 <!-- =========================================================================
-     SLIDE 4 , Results
+     SLIDE 5, Results
      ===================================================================== -->
-<section class="slide" data-slide="3">
+<section class="slide" data-slide="4">
   <header class="slide-header">
     <p class="eyebrow">Results</p>
     <h2>Measured impact across all instances</h2>
     <hr class="accent-rule" />
     <p class="lede">
-      Fast Downward, 13 instances, 5 min / 4 GB budget.
+      Fast Downward<button class="info-btn" data-info="fast-downward" aria-label="What is Fast Downward?">i</button>,
+      13 instances, 5 min / 4 GB budget.
     </p>
   </header>
 
@@ -342,7 +436,7 @@
       <p class="chart-caption">
         <strong>Lower is better.</strong>
         Across all 13 instances the axioms encoding produces about half as
-        many grounded operators , the planner has less to search through.
+        many grounded operators.
       </p>
     </figure>
 
@@ -352,14 +446,14 @@
       </figcaption>
       <div id="chart-walltime" class="chart-host"></div>
       <p class="chart-legend">
-        <span class="swatch swatch--noax"></span> No-axioms · A* + LM-cut heuristic
+        <span class="swatch swatch--noax"></span> No-axioms, A* + LM-cut heuristic
         &nbsp;&nbsp;
-        <span class="swatch swatch--ax"></span> Axioms · A* + h<sup>max</sup> heuristic
+        <span class="swatch swatch--ax"></span> Axioms, A* + h<sup>max</sup> heuristic
       </p>
       <p class="chart-caption">
         <strong>Lower is faster.</strong> Both find the same optimal cost on
-        every solved instance , but the axioms encoding reaches it
-        <strong>4,9× quicker</strong>.
+        every solved instance. The axioms encoding reaches it
+        <strong>4 to 9 times quicker</strong>.
       </p>
     </figure>
   </div>
@@ -367,21 +461,29 @@
   <p class="results-footnote">
     Satisficing (LAMA, 5 min): <strong>axioms 5 / 5</strong> vs
     <strong>no-axioms 3 / 5</strong>.&nbsp;&nbsp;
-    Heuristics: <em>blind</em> = no guidance, <em>LM-cut</em> &amp;
-    <em>h<sup>max</sup></em> = admissible heuristics (LM-cut more
-    informative, but doesn't natively support axioms in this FD build).
+    Heuristics: <em>blind</em> applies no guidance,
+    <em>LM-cut</em> and <em>h<sup>max</sup></em> are admissible heuristics.
+    LM-cut is more informative but does not natively support axioms in this
+    Fast Downward<button class="info-btn" data-info="fast-downward" aria-label="What is Fast Downward?">i</button>
+    build.
+  </p>
+
+  <p class="results-report">
+    <a class="report-link" href="report.pdf" target="_blank" rel="noopener">
+      &#x2193; Download the final report (PDF)
+    </a>
   </p>
 </section>
 
 </main>
 
 <!-- =========================================================================
-     Rate-limit modal (shown when nginx 429s a /api/run request)
+     Rate-limit / server-busy modal
      ===================================================================== -->
 <div id="rate-limit-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
   <div class="modal-card">
     <h3 id="modal-title" class="modal-title">Hold on a moment</h3>
-    <p class="modal-body">
+    <p class="modal-body" id="modal-body">
       Each visitor can only start the race a couple of times per minute,
       so the server stays safe from bots. Try again in about a minute.
     </p>
@@ -391,10 +493,15 @@
   </div>
 </div>
 
+<!-- =========================================================================
+     Shared info popover (anchored to whichever .info-btn was clicked)
+     ===================================================================== -->
+<div id="info-popover" hidden role="dialog" aria-modal="false"></div>
+
 <!-- footer chrome -->
 <footer id="chrome">
-  <span class="chrome-left">Spider with Axioms · Manuel Buser · Knowledge, Reasoning and Planning Seminar HS25</span>
-  <span class="chrome-right"><span id="chrome-page">1</span> / 4</span>
+  <span class="chrome-left">Spider with Axioms, Manuel Buser, Knowledge, Reasoning and Planning Seminar HS25</span>
+  <span class="chrome-right"><span id="chrome-page">1</span> / 5</span>
 </footer>
 
 <script src="app.js"></script>

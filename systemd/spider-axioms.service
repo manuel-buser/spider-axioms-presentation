@@ -10,6 +10,7 @@ WorkingDirectory=/srv/spider-axioms-presentation/web
 Environment=FD_SCRIPT=/srv/fast-downward/fast-downward.py
 Environment=PROJECT_ROOT=/srv/spider-axioms-presentation/pddl
 Environment=PORT=8000
+Environment=PYTHONUNBUFFERED=1
 ExecStart=/usr/bin/python3 server.py
 Restart=on-failure
 RestartSec=3

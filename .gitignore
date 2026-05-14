@@ -6,3 +6,6 @@ __pycache__/
 .idea/
 .vscode/
 node_modules/
+
+# Final report PDF lives on the VPS only, kept out of git to keep the repo small.
+web/report.pdf

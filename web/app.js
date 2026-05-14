@@ -1,9 +1,7 @@
 /* ============================================================================
- * Spider with Axioms , HTML presentation
- *   - slide navigation (← → / space / page-up/down / dot click)
- *   - SSE-driven live FD demo with side-by-side race
- *   - SVG bar charts on slide 4
- * Vanilla JS, no dependencies.
+ * Spider with Axioms, HTML presentation
+ *   slide navigation, info popovers, SSE live demo, comparison panel,
+ *   SVG bar charts. Vanilla JS, no dependencies.
  * ========================================================================= */
 
 (() => {
@@ -12,23 +10,27 @@
 // Slide navigation
 // ---------------------------------------------------------------------------
 const slides = Array.from(document.querySelectorAll(".slide"));
-const dots   = Array.from(document.querySelectorAll(".dot"));
+const tabs   = Array.from(document.querySelectorAll(".nav-tab"));
 const pageEl = document.getElementById("chrome-page");
+const prevBtn = document.getElementById("nav-prev");
+const nextBtn = document.getElementById("nav-next");
 let current  = 0;
 
 function show(i) {
   current = Math.max(0, Math.min(slides.length - 1, i));
   slides.forEach((s, k) => s.classList.toggle("active", k === current));
-  dots  .forEach((d, k) => d.classList.toggle("active", k === current));
+  tabs.forEach((t, k)   => t.classList.toggle("active", k === current));
   if (pageEl) pageEl.textContent = current + 1;
-
-  // Lazily render charts when slide 4 first appears (avoids initial-paint cost)
-  if (current === 3) renderCharts();
+  if (prevBtn) prevBtn.disabled = current === 0;
+  if (nextBtn) nextBtn.disabled = current === slides.length - 1;
+  if (current === 4) renderCharts();
 }
 
 document.addEventListener("keydown", (e) => {
-  // ignore keystrokes while a text input has focus (none today, but safe)
   if (e.target instanceof HTMLInputElement) return;
+  // do not steal arrow keys when the info popover or modal is open
+  const modalOpen = !document.getElementById("rate-limit-modal").hidden;
+  if (modalOpen && e.key !== "Escape") return;
 
   switch (e.key) {
     case "ArrowRight":
@@ -45,18 +47,84 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-dots.forEach((d) => d.addEventListener("click", () => {
-  show(parseInt(d.dataset.target, 10));
+tabs.forEach((t) => t.addEventListener("click", () => {
+  show(parseInt(t.dataset.target, 10));
 }));
+if (prevBtn) prevBtn.addEventListener("click", () => show(current - 1));
+if (nextBtn) nextBtn.addEventListener("click", () => show(current + 1));
 
-// On load, activate slide 0
 show(0);
 
 
 // ---------------------------------------------------------------------------
-// Demo-token bypass (lets Manuel race repeatedly without tripping the public
-// rate-limit). Token comes from ?token=... on first visit, then sticks in
-// localStorage and is appended to every /api/run URL.
+// Info popovers (Fast Downward etc.)
+// ---------------------------------------------------------------------------
+const INFO_ENTRIES = {
+  "fast-downward": {
+    title: "Fast Downward",
+    body:
+      "A classical planning system written in C++. It is widely used as a " +
+      "reference implementation in planning research.",
+    link: {
+      label: "fast-downward.org",
+      href:  "https://www.fast-downward.org/latest/",
+    },
+  },
+};
+const popover = document.getElementById("info-popover");
+let popoverAnchor = null;
+
+function showPopover(anchor, key) {
+  const entry = INFO_ENTRIES[key];
+  if (!entry || !popover) return;
+  popover.innerHTML = `
+    <h4>${entry.title}</h4>
+    <p>${entry.body}</p>
+    ${entry.link
+      ? `<a class="popover-link" href="${entry.link.href}" target="_blank" rel="noopener">${entry.link.label} &#x2197;</a>`
+      : ""}
+  `;
+  popover.hidden = false;
+  // position next to the anchor button
+  const r = anchor.getBoundingClientRect();
+  const popW = popover.offsetWidth;
+  const popH = popover.offsetHeight;
+  let left = r.left + window.scrollX;
+  let top  = r.bottom + window.scrollY + 8;
+  if (left + popW > window.innerWidth - 12) {
+    left = window.innerWidth - popW - 12;
+  }
+  if (top + popH > window.innerHeight - 12) {
+    top = r.top + window.scrollY - popH - 8;
+  }
+  popover.style.left = `${left}px`;
+  popover.style.top  = `${top}px`;
+  popoverAnchor = anchor;
+}
+
+function hidePopover() {
+  if (popover) popover.hidden = true;
+  popoverAnchor = null;
+}
+
+document.addEventListener("click", (e) => {
+  const target = e.target instanceof Element ? e.target : null;
+  if (!target) return;
+  const info = target.closest(".info-btn");
+  if (info) {
+    if (popoverAnchor === info) { hidePopover(); }
+    else                        { showPopover(info, info.dataset.info); }
+    e.stopPropagation();
+    return;
+  }
+  if (popover && !popover.hidden && !target.closest("#info-popover")) {
+    hidePopover();
+  }
+});
+
+
+// ---------------------------------------------------------------------------
+// Demo-token bypass (Manuel's laptop, via ?token=... once)
 // ---------------------------------------------------------------------------
 const TOKEN_STORAGE_KEY = "spiderToken";
 (function captureToken() {
@@ -64,7 +132,6 @@ const TOKEN_STORAGE_KEY = "spiderToken";
   const t = params.get("token");
   if (t) {
     localStorage.setItem(TOKEN_STORAGE_KEY, t);
-    // strip the token from the visible URL bar
     params.delete("token");
     const newQuery = params.toString();
     const clean = window.location.pathname + (newQuery ? "?" + newQuery : "")
@@ -74,20 +141,63 @@ const TOKEN_STORAGE_KEY = "spiderToken";
 })();
 function getToken() { return localStorage.getItem(TOKEN_STORAGE_KEY) || ""; }
 
+
 // ---------------------------------------------------------------------------
-// Live demo: side-by-side SSE race
+// Modal helpers (used for both 429 and 503)
+// ---------------------------------------------------------------------------
+const modalEl   = document.getElementById("rate-limit-modal");
+const modalTitle = document.getElementById("modal-title");
+const modalBody  = document.getElementById("modal-body");
+
+const MODAL_COPY = {
+  rateLimit: {
+    title: "Hold on a moment",
+    body:  "Each visitor can only start the race a couple of times per minute, so the server stays safe from bots. Try again in about a minute.",
+  },
+  serverBusy: {
+    title: "The server is busy",
+    body:  "Many visitors are running the demo right now. Try again in a few seconds.",
+  },
+  serverError: {
+    title: "The server is not reachable",
+    body:  "Something went wrong while reaching the backend. The page will work again once the server responds.",
+  },
+};
+
+function showModal(variant) {
+  const copy = MODAL_COPY[variant] || MODAL_COPY.serverError;
+  modalTitle.textContent = copy.title;
+  modalBody.textContent  = copy.body;
+  modalEl.hidden = false;
+}
+function hideModal() { modalEl.hidden = true; }
+
+document.addEventListener("click", (e) => {
+  if (!(e.target instanceof Element)) return;
+  if (e.target.matches("[data-close-modal]")) hideModal();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    hideModal();
+    hidePopover();
+  }
+});
+
+
+// ---------------------------------------------------------------------------
+// Live demo, side-by-side SSE race
 // ---------------------------------------------------------------------------
 const DEMO_INSTANCE = "p09";
-const DEMO_SEARCH   = "blind";          // both encodings supported
+const DEMO_SEARCH   = "blind";
 
 const btnRun   = document.getElementById("demo-run");
 const btnReset = document.getElementById("demo-reset");
 const statusEl = document.getElementById("demo-status");
 const paneNoax = document.getElementById("pane-noax");
 const paneAx   = document.getElementById("pane-ax");
+const comparePanel = document.getElementById("compare-panel");
 
-let activeSources = [];
-let raceState     = null;
+let raceState = null;
 
 function getPanes() {
   return [
@@ -99,18 +209,18 @@ function getPanes() {
 function resetPanes() {
   for (const { pane } of getPanes()) {
     pane.querySelector('[data-role="term"]').textContent = "";
-    pane.querySelector('[data-role="term"]').hidden      = false;
-    const summary = pane.querySelector('[data-role="summary"]');
-    summary.hidden = true;
-    summary.innerHTML = "";
-    summary.classList.remove("is-winner");
+    pane.querySelector('[data-role="term"]').hidden = false;
     pane.querySelector('[data-role="timer"]').textContent = "0.00 s";
+  }
+  if (comparePanel) {
+    comparePanel.classList.remove("is-visible");
+    const grid = document.getElementById("compare-grid");
+    if (grid) grid.innerHTML = "";
   }
 }
 
 function appendLine(termEl, text) {
   const div = document.createElement("span");
-  // crude classification for color
   if (/^\[t=|^Total time:|^Search time:|^Plan cost:|^Plan length:|^Expanded/.test(text)) {
     div.className = "line-stat";
   } else {
@@ -118,7 +228,6 @@ function appendLine(termEl, text) {
   }
   div.textContent = text + "\n";
   termEl.appendChild(div);
-  // auto-scroll to bottom
   termEl.scrollTop = termEl.scrollHeight;
 }
 
@@ -127,56 +236,30 @@ function fmtTime(s) {
   return s.toFixed(2) + " s";
 }
 
-function renderSummary(pane, data, isWinner) {
-  const summary = pane.querySelector('[data-role="summary"]');
-  pane.querySelector('[data-role="term"]').hidden = true;
-  summary.hidden = false;
-  summary.classList.toggle("is-winner", isWinner);
-
-  const rows = [
-    ["Total time",  fmtTime(data.total_time ?? data.wall_clock)],
-    ["Plan cost",   data.cost   ?? "-"],
-    ["Plan length", data.length ?? "-"],
-    ["Expanded",    data.expanded != null ? data.expanded.toLocaleString() : "-"],
-  ];
-
-  summary.innerHTML = rows.map(([k, v], idx) => `
-    <div class="summary-row">
-      <span class="k">${k}</span>
-      <span class="v${idx === 0 && isWinner ? " winner" : ""}">${v}</span>
-      ${idx === 0 && isWinner ? '<span class="winner-badge">finished first</span>' : ""}
-    </div>
-  `).join("");
-}
-
 function tearDown() {
-  for (const es of activeSources) { try { es.close(); } catch (_) {} }
-  activeSources = [];
+  if (raceState && raceState.abortControllers) {
+    for (const c of raceState.abortControllers) { try { c.abort(); } catch (_) {} }
+  }
 }
 
-function abortRace(tickerId) {
-  if (tickerId != null) clearInterval(tickerId);
-  tearDown();
-  btnRun.disabled = false;
-  btnReset.hidden = true;
-  raceState = null;
-}
-
-function startRace() {
+async function startRace() {
   resetPanes();
   btnRun.disabled = true;
   btnReset.hidden = true;
   statusEl.textContent = "Starting the race...";
 
+  const tok    = getToken();
+  const tokQS  = tok ? `&token=${encodeURIComponent(tok)}` : "";
+
   raceState = {
     finished      : new Set(),
     results       : {},
     started       : performance.now(),
-    helloReceived : new Set(),    // ids that produced at least one event
+    helloReceived : new Set(),
     aborted       : false,
+    abortControllers: [],
   };
 
-  // ticker for the timers
   const tickerId = setInterval(() => {
     if (!raceState) return;
     const elapsed = (performance.now() - raceState.started) / 1000;
@@ -186,109 +269,105 @@ function startRace() {
     }
   }, 100);
 
-  // If either stream fails to even open within 4 s, assume rate-limit.
-  // (A successful connection sends 'hello' immediately, so this fires only
-  //  when nginx 429's us or the server is unreachable.)
-  const connectTimeoutId = setTimeout(() => {
+  function abortAll(modalVariant) {
     if (!raceState || raceState.aborted) return;
-    if (raceState.helloReceived.size < 2) {
-      raceState.aborted = true;
-      abortRace(tickerId);
-      showRateLimitModal();
-    }
-  }, 4000);
+    raceState.aborted = true;
+    for (const c of raceState.abortControllers) { try { c.abort(); } catch (_) {} }
+    clearInterval(tickerId);
+    btnRun.disabled = false;
+    btnReset.hidden = true;
+    statusEl.textContent = "";
+    raceState = null;
+    if (modalVariant) showModal(modalVariant);
+  }
 
-  for (const { id, pane } of getPanes()) {
+  // Launch both fetches in parallel; the first one to receive a non-OK
+  // response decides which modal to show.
+  await Promise.all(getPanes().map(async ({ id, pane }) => {
+    if (!raceState || raceState.aborted) return;
     const term    = pane.querySelector('[data-role="term"]');
     const timerEl = pane.querySelector('[data-role="timer"]');
-    const tok     = getToken();
-    const tokQS   = tok ? `&token=${encodeURIComponent(tok)}` : "";
     const url     = `api/run?encoding=${id}&instance=${DEMO_INSTANCE}&search=${DEMO_SEARCH}&track=opt${tokQS}`;
-    const es      = new EventSource(url);
-    activeSources.push(es);
 
-    es.addEventListener("hello", (ev) => {
-      raceState.helloReceived.add(id);
-      if (raceState.helloReceived.size === 2) statusEl.textContent = "Racing...";
-      try {
-        const data = JSON.parse(ev.data);
+    const ctrl = new AbortController();
+    raceState.abortControllers.push(ctrl);
+
+    let resp;
+    try {
+      resp = await fetch(url, { signal: ctrl.signal });
+    } catch (_) {
+      abortAll("serverError");
+      return;
+    }
+    if (resp.status === 429) { abortAll("rateLimit");   return; }
+    if (resp.status === 503) { abortAll("serverBusy");  return; }
+    if (!resp.ok)            { abortAll("serverError"); return; }
+    if (!resp.body)          { abortAll("serverError"); return; }
+
+    // Parse SSE manually: events are separated by double-newlines.
+    const reader  = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = "";
+
+    function handleEvent(eventName, dataStr) {
+      let data;
+      try { data = JSON.parse(dataStr); } catch (_) { return; }
+      if (eventName === "hello") {
+        raceState.helloReceived.add(id);
+        if (raceState.helloReceived.size === 2) statusEl.textContent = "Racing...";
         appendLine(term, `$ ${data.cmd}`);
         appendLine(term, "");
-      } catch (_) {}
-    });
-
-    es.addEventListener("line", (ev) => {
-      try {
-        const data = JSON.parse(ev.data);
+      } else if (eventName === "line") {
         if (data.line !== undefined) appendLine(term, data.line);
-      } catch (_) {}
-    });
-
-    es.addEventListener("done", (ev) => {
-      const data = JSON.parse(ev.data);
-      raceState.results[id] = data;
-      raceState.finished.add(id);
-      timerEl.textContent = fmtTime(data.total_time ?? data.wall_clock);
-      es.close();
-
-      // First to finish?
-      const isWinner = raceState.finished.size === 1;
-      renderSummary(pane, data, isWinner);
-
-      // Both done?
-      if (raceState.finished.size === 2) {
-        clearInterval(tickerId);
-        clearTimeout(connectTimeoutId);
-        btnReset.hidden = false;
-        btnRun.disabled = false;
-        const tNoax = raceState.results.noaxioms?.total_time;
-        const tAx   = raceState.results.axioms?.total_time;
-        if (tNoax && tAx) {
-          const speedup = tNoax / tAx;
-          statusEl.textContent =
-            speedup > 1
-              ? `axioms ${speedup.toFixed(1)}× faster`
-              : `no-axioms ${(1/speedup).toFixed(1)}× faster`;
-        } else {
-          statusEl.textContent = "Race complete";
+      } else if (eventName === "done") {
+        raceState.results[id] = data;
+        raceState.finished.add(id);
+        timerEl.textContent = fmtTime(data.total_time ?? data.wall_clock);
+        if (raceState.finished.size === 2) {
+          clearInterval(tickerId);
+          btnReset.hidden = false;
+          btnRun.disabled = false;
+          renderComparison(raceState.results);
+          const tNoax = raceState.results.noaxioms?.total_time ?? raceState.results.noaxioms?.wall_clock;
+          const tAx   = raceState.results.axioms?.total_time   ?? raceState.results.axioms?.wall_clock;
+          if (tNoax && tAx) {
+            const speedup = tNoax / tAx;
+            statusEl.textContent =
+              speedup > 1
+                ? `axioms ${speedup.toFixed(1)}x faster`
+                : `no-axioms ${(1/speedup).toFixed(1)}x faster`;
+          } else {
+            statusEl.textContent = "Race complete";
+          }
         }
       }
-    });
+    }
 
-    es.addEventListener("error", () => {
-      // EventSource fires 'error' both for HTTP errors and natural close.
-      // If we never received the opening 'hello', the connection failed
-      // (most likely nginx 429 rate-limit, or server unreachable).
-      const closed = es.readyState === EventSource.CLOSED;
-      if (!closed) return;
-      if (raceState && !raceState.helloReceived.has(id) && !raceState.aborted) {
-        raceState.aborted = true;
-        clearTimeout(connectTimeoutId);
-        abortRace(tickerId);
-        showRateLimitModal();
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        let idx;
+        while ((idx = buf.indexOf("\n\n")) !== -1) {
+          const block = buf.slice(0, idx);
+          buf = buf.slice(idx + 2);
+          // Parse one event block, e.g. "event: line\ndata: {...}"
+          let eventName = "message", dataStr = "";
+          for (const ln of block.split("\n")) {
+            if (ln.startsWith("event:")) eventName = ln.slice(6).trim();
+            else if (ln.startsWith("data:")) dataStr += ln.slice(5).trim();
+          }
+          handleEvent(eventName, dataStr);
+        }
       }
-    });
-  }
+    } catch (err) {
+      if (err && err.name !== "AbortError") {
+        abortAll("serverError");
+      }
+    }
+  }));
 }
-
-// ---------------------------------------------------------------------------
-// Rate-limit modal
-// ---------------------------------------------------------------------------
-function showRateLimitModal() {
-  const modal = document.getElementById("rate-limit-modal");
-  if (modal) modal.hidden = false;
-}
-function hideRateLimitModal() {
-  const modal = document.getElementById("rate-limit-modal");
-  if (modal) modal.hidden = true;
-}
-document.addEventListener("click", (e) => {
-  if (!(e.target instanceof Element)) return;
-  if (e.target.matches("[data-close-modal]")) hideRateLimitModal();
-});
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") hideRateLimitModal();
-});
 
 if (btnRun)   btnRun  .addEventListener("click", startRace);
 if (btnReset) btnReset.addEventListener("click", () => {
@@ -301,7 +380,93 @@ if (btnReset) btnReset.addEventListener("click", () => {
 
 
 // ---------------------------------------------------------------------------
-// SVG bar charts (slide 4)
+// Comparison panel rendering
+// ---------------------------------------------------------------------------
+function renderComparison(results) {
+  const noax = results.noaxioms || {};
+  const ax   = results.axioms   || {};
+  const grid = document.getElementById("compare-grid");
+  const headline = document.getElementById("compare-headline");
+  const subline  = document.getElementById("compare-subline");
+  if (!grid) return;
+
+  const tNoax = noax.total_time ?? noax.wall_clock;
+  const tAx   = ax.total_time   ?? ax.wall_clock;
+  if (tNoax && tAx) {
+    const ratio = tNoax / tAx;
+    if (ratio >= 1.05) {
+      headline.textContent = `axioms is ${ratio.toFixed(1)}x faster`;
+    } else if (ratio <= 0.95) {
+      headline.textContent = `no-axioms is ${(1/ratio).toFixed(1)}x faster`;
+    } else {
+      headline.textContent = "axioms and no-axioms finish in similar time";
+    }
+  } else {
+    headline.textContent = "Race complete";
+  }
+  subline.textContent =
+    "horizontal bars are scaled relative to the larger value, raw numbers shown inside each bar";
+
+  const rows = [
+    { label: "Total time",  noax: tNoax,            ax: tAx,          fmt: (v) => v != null ? `${v.toFixed(2)} s` : "-", lowerIsBetter: true },
+    { label: "Plan cost",   noax: noax.cost,        ax: ax.cost,      fmt: (v) => v != null ? `${v}` : "-",              lowerIsBetter: null  },
+    { label: "Plan length", noax: noax.length,      ax: ax.length,    fmt: (v) => v != null ? `${v}` : "-",              lowerIsBetter: true },
+    { label: "Expanded",    noax: noax.expanded,    ax: ax.expanded,  fmt: (v) => v != null ? v.toLocaleString() : "-",  lowerIsBetter: true },
+  ];
+
+  grid.innerHTML = "";
+  // column headers
+  const hLabel = document.createElement("div"); hLabel.className = "ch-header"; hLabel.textContent = "metric"; hLabel.style.textAlign = "left";
+  const hNoax  = document.createElement("div"); hNoax.className  = "ch-header noax"; hNoax.textContent  = "no-axioms";
+  const hAx    = document.createElement("div"); hAx.className    = "ch-header ax";   hAx.textContent    = "axioms";
+  grid.append(hLabel, hNoax, hAx);
+
+  for (const r of rows) {
+    const maxV = Math.max(Number(r.noax) || 0, Number(r.ax) || 0) || 1;
+    const widthNoax = r.noax != null ? (Number(r.noax) / maxV) * 100 : 0;
+    const widthAx   = r.ax   != null ? (Number(r.ax)   / maxV) * 100 : 0;
+
+    const label = document.createElement("div");
+    label.className = "ch-label";
+    label.textContent = r.label;
+
+    const cellNoax = document.createElement("div");
+    cellNoax.className = "ch-bar-cell";
+    cellNoax.innerHTML = `
+      <div class="ch-bar">
+        <div class="ch-bar-fill noax" style="width:${widthNoax}%"></div>
+        <div class="ch-bar-value">${r.fmt(r.noax)}</div>
+      </div>`;
+
+    const cellAx = document.createElement("div");
+    cellAx.className = "ch-bar-cell";
+    cellAx.innerHTML = `
+      <div class="ch-bar">
+        <div class="ch-bar-fill ax" style="width:${widthAx}%"></div>
+        <div class="ch-bar-value">${r.fmt(r.ax)}</div>
+      </div>`;
+
+    grid.append(label, cellNoax, cellAx);
+  }
+
+  // equivalence note for plan cost if equal
+  if (noax.cost != null && ax.cost != null && noax.cost === ax.cost) {
+    const note = document.createElement("div");
+    note.style.gridColumn = "1 / -1";
+    note.style.marginTop = "0.4rem";
+    note.style.fontSize = "0.85rem";
+    note.style.color = "var(--ax)";
+    note.style.fontStyle = "italic";
+    note.textContent = `Both reach plan cost ${noax.cost}, the equivalence check passes.`;
+    grid.append(note);
+  }
+
+  comparePanel.classList.add("is-visible");
+}
+
+
+// ---------------------------------------------------------------------------
+// SVG bar charts (slide 5)
 // ---------------------------------------------------------------------------
 const OPERATORS_DATA = {
   opt: [
@@ -337,7 +502,6 @@ function renderCharts() {
   drawOperatorsChart(document.getElementById("chart-operators"));
   drawWalltimeChart (document.getElementById("chart-walltime"));
   chartsRendered = true;
-  // re-render on resize (debounced)
   let raf = 0;
   window.addEventListener("resize", () => {
     cancelAnimationFrame(raf);
@@ -348,7 +512,6 @@ function renderCharts() {
   });
 }
 
-// helper: log10 scale mapping a value v in [vmin, vmax] to a pixel range
 function logScale(v, vmin, vmax, pxMin, pxMax) {
   const lv = Math.log10(Math.max(v, vmin));
   const lmin = Math.log10(vmin), lmax = Math.log10(vmax);
@@ -380,7 +543,6 @@ function drawOperatorsChart(host) {
   const slotW    = usable / total;
   const barW     = slotW * 0.36;
 
-  // y-axis: log scale 1 .. 200000
   const yMin = 1, yMax = 200000;
   const y = (v) => M.t + innerH - logScale(v, yMin, yMax, 0, innerH);
 
@@ -391,76 +553,65 @@ function drawOperatorsChart(host) {
     preserveAspectRatio: "xMinYMin meet",
   });
 
-  // grid + y-ticks at powers of 10
   for (const tv of [1, 10, 100, 1000, 10000, 100000]) {
     const yy = y(tv);
     svg.appendChild(svgEl("line", {
       class: "grid-line",
       x1: M.l, x2: M.l + innerW, y1: yy, y2: yy,
     }));
-    svg.appendChild(svgEl("text", {
+    const t = svgEl("text", {
       x: M.l - 6, y: yy + 3,
-      "text-anchor": "end",
-      fill: "var(--muted)", "font-size": 9,
-    })).textContent = tv >= 1000 ? `${tv/1000}k` : `${tv}`;
+      "text-anchor": "end", "font-size": 9,
+    });
+    t.textContent = tv >= 1000 ? `${tv/1000}k` : `${tv}`;
+    svg.appendChild(t);
   }
 
-  // y-axis title
   const yTitle = svgEl("text", {
     transform: `translate(12, ${M.t + innerH / 2}) rotate(-90)`,
     "text-anchor": "middle",
-    fill: "var(--muted)", "font-size": 10,
+    "font-size": 10,
   });
   yTitle.textContent = "grounded operators (log scale)";
   svg.appendChild(yTitle);
 
-  // bars
   let xCursor = M.l;
   for (let gi = 0; gi < groups.length; gi++) {
     const g = groups[gi];
-    // group label
     const gx = xCursor + (g.rows.length * slotW) / 2;
-    svg.appendChild(svgEl("text", {
-      x: gx, y: M.t + innerH + 30,
-      class: "group-label", "text-anchor": "middle",
-    })).textContent = g.label.toUpperCase();
+    const gl = svgEl("text", { x: gx, y: M.t + innerH + 30, class: "group-label", "text-anchor": "middle" });
+    gl.textContent = g.label.toUpperCase();
+    svg.appendChild(gl);
 
     for (let i = 0; i < g.rows.length; i++) {
       const row = g.rows[i];
       const center = xCursor + i * slotW + slotW / 2;
-      // no-axioms bar (left)
       svg.appendChild(svgEl("rect", {
         class: "bar-noax",
         x: center - barW - 1, y: y(row.n),
         width: barW, height: M.t + innerH - y(row.n),
       }));
-      // axioms bar (right)
       svg.appendChild(svgEl("rect", {
         class: "bar-ax",
         x: center + 1, y: y(row.a),
         width: barW, height: M.t + innerH - y(row.a),
       }));
-      // x label
-      svg.appendChild(svgEl("text", {
-        x: center, y: M.t + innerH + 14,
-        "text-anchor": "middle",
-        fill: "var(--ink)", "font-size": 9.5,
-      })).textContent = row.i;
+      const xl = svgEl("text", { x: center, y: M.t + innerH + 14, "text-anchor": "middle", "font-size": 9.5 });
+      xl.textContent = row.i;
+      svg.appendChild(xl);
     }
 
     xCursor += g.rows.length * slotW;
     if (gi < groups.length - 1) {
-      // divider
       svg.appendChild(svgEl("line", {
         class: "group-divider",
         x1: xCursor + groupGap / 2, x2: xCursor + groupGap / 2,
-        y1: M.t,                    y2: M.t + innerH,
+        y1: M.t, y2: M.t + innerH,
       }));
       xCursor += groupGap;
     }
   }
 
-  // baseline
   svg.appendChild(svgEl("line", {
     class: "axis-line",
     x1: M.l, x2: M.l + innerW, y1: M.t + innerH, y2: M.t + innerH,
@@ -491,26 +642,23 @@ function drawWalltimeChart(host) {
     preserveAspectRatio: "xMinYMin meet",
   });
 
-  // grid + ticks
   for (const tv of [0.1, 1, 10, 100]) {
     const yy = y(tv);
     svg.appendChild(svgEl("line", {
       class: "grid-line",
       x1: M.l, x2: M.l + innerW, y1: yy, y2: yy,
     }));
-    svg.appendChild(svgEl("text", {
-      x: M.l - 6, y: yy + 3,
-      "text-anchor": "end",
-      fill: "var(--muted)", "font-size": 9,
-    })).textContent = tv < 1 ? tv.toFixed(1) + "s" : tv + "s";
+    const t = svgEl("text", { x: M.l - 6, y: yy + 3, "text-anchor": "end", "font-size": 9 });
+    t.textContent = tv < 1 ? tv.toFixed(1) + "s" : tv + "s";
+    svg.appendChild(t);
   }
 
-  // y-axis title
-  svg.appendChild(svgEl("text", {
+  const yTitle = svgEl("text", {
     transform: `translate(12, ${M.t + innerH / 2}) rotate(-90)`,
-    "text-anchor": "middle",
-    fill: "var(--muted)", "font-size": 10,
-  })).textContent = "wall-clock (log scale)";
+    "text-anchor": "middle", "font-size": 10,
+  });
+  yTitle.textContent = "wall-clock (log scale)";
+  svg.appendChild(yTitle);
 
   rows.forEach((row, i) => {
     const center = M.l + i * slotW + slotW / 2;
@@ -526,35 +674,37 @@ function drawWalltimeChart(host) {
       width: barW, height: M.t + innerH - y(row.a),
     }));
 
-    // numeric labels on top of each bar
-    svg.appendChild(svgEl("text", {
+    const lnNo = svgEl("text", {
       class: "bar-label",
       x: center - barW/2 - 1, y: y(row.n) - 3,
-      "text-anchor": "middle", fill: "var(--noax)",
-    })).textContent = row.n < 1 ? row.n.toFixed(2) + "s" : row.n.toFixed(1) + "s";
+      "text-anchor": "middle",
+    });
+    lnNo.setAttribute("fill", "var(--noax)");
+    lnNo.textContent = row.n < 1 ? row.n.toFixed(2) + "s" : row.n.toFixed(1) + "s";
+    svg.appendChild(lnNo);
 
-    svg.appendChild(svgEl("text", {
+    const lnAx = svgEl("text", {
       class: "bar-label",
       x: center + barW/2 + 1, y: y(row.a) - 3,
-      "text-anchor": "middle", fill: "var(--ax)",
-    })).textContent = row.a < 1 ? row.a.toFixed(2) + "s" : row.a.toFixed(1) + "s";
+      "text-anchor": "middle",
+    });
+    lnAx.setAttribute("fill", "var(--ax)");
+    lnAx.textContent = row.a < 1 ? row.a.toFixed(2) + "s" : row.a.toFixed(1) + "s";
+    svg.appendChild(lnAx);
 
-    // speedup callout above the pair
-    svg.appendChild(svgEl("text", {
+    const sp = svgEl("text", {
       class: "speedup",
       x: center, y: M.t - 12,
       "text-anchor": "middle",
-    })).textContent = `axioms ${row.speedup.toFixed(1)}× faster`;
+    });
+    sp.textContent = `axioms ${row.speedup.toFixed(1)}x faster`;
+    svg.appendChild(sp);
 
-    // x label
-    svg.appendChild(svgEl("text", {
-      x: center, y: M.t + innerH + 16,
-      "text-anchor": "middle",
-      fill: "var(--ink)", "font-size": 9.5,
-    })).textContent = "opt " + row.i;
+    const xl = svgEl("text", { x: center, y: M.t + innerH + 16, "text-anchor": "middle", "font-size": 9.5 });
+    xl.textContent = "opt " + row.i;
+    svg.appendChild(xl);
   });
 
-  // baseline
   svg.appendChild(svgEl("line", {
     class: "axis-line",
     x1: M.l, x2: M.l + innerW, y1: M.t + innerH, y2: M.t + innerH,

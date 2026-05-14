@@ -22,9 +22,11 @@ import http.server
 import json
 import os
 import re
+import shutil
 import socketserver
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import urllib.parse
@@ -159,6 +161,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         start   = time.monotonic()
         summary = {"encoding": enc, "instance": inst, "search": search_k}
         proc: subprocess.Popen | None = None
+        # FD's translator writes output.sas to its cwd; the systemd unit
+        # marks /srv read-only (ProtectSystem=strict), so run FD in a private
+        # /tmp directory and clean up afterwards.
+        workdir = tempfile.mkdtemp(prefix="fd-")
+        # Force the child Python (FD wrapper + translate) to flush stdout
+        # line-by-line so summary lines arrive promptly.
+        env = os.environ.copy()
+        env["PYTHONUNBUFFERED"] = "1"
         try:
             proc = subprocess.Popen(
                 cmd,
@@ -166,12 +176,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 stderr=subprocess.STDOUT,
                 text=True,
                 bufsize=1,
+                cwd=workdir,
+                env=env,
             )
             for raw in proc.stdout:                       # type: ignore[union-attr]
                 line = raw.rstrip("\n")
                 update_summary(summary, line)
                 if not self._send_event("line", {"line": line}):
-                    # browser disconnected , kill FD and bail
                     proc.terminate()
                     return
             proc.wait()
@@ -185,6 +196,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self._send_event("error", {"error": str(exc)})
             if proc is not None:
                 proc.terminate()
+        finally:
+            shutil.rmtree(workdir, ignore_errors=True)
 
     # -- low-level SSE write ------------------------------------------------
     def _send_event(self, event: str, data: dict) -> bool:
