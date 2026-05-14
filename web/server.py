@@ -91,11 +91,17 @@ def update_summary(summary: dict, line: str) -> None:
 # ---------------------------------------------------------------------------
 
 class Handler(http.server.SimpleHTTPRequestHandler):
-    # Quiet-down per-request log (otherwise SSE streams flood the console)
+    # Quiet-down per-request log (otherwise SSE streams flood the console).
+    # Be defensive: log_message can be called with non-string args (HTTPStatus
+    # enums via send_error -> log_error), which would otherwise raise here.
     def log_message(self, fmt: str, *args) -> None:
-        if "/api/run" in (args[0] if args else ""):
+        first = str(args[0]) if args else ""
+        if "/api/run" in first:
             return
-        super().log_message(fmt, *args)
+        try:
+            super().log_message(fmt, *args)
+        except Exception:
+            pass
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(STATIC_ROOT), **kwargs)
