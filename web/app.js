@@ -71,7 +71,6 @@ const INFO_ENTRIES = {
     },
   },
   "about-site": {
-    title: "About this site",
     body:
       "This presentation site (HTML, CSS, JS, deployment scripts, nginx " +
       "config) and parts of the supporting tooling were written with " +
@@ -86,7 +85,7 @@ function showPopover(anchor, key) {
   const entry = INFO_ENTRIES[key];
   if (!entry || !popover) return;
   popover.innerHTML = `
-    <h4>${entry.title}</h4>
+    ${entry.title ? `<h4>${entry.title}</h4>` : ""}
     <p>${entry.body}</p>
     ${entry.link
       ? `<a class="popover-link" href="${entry.link.href}" target="_blank" rel="noopener">${entry.link.label} &#x2197;</a>`
