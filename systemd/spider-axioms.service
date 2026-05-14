@@ -1,0 +1,35 @@
+[Unit]
+Description=Spider-axioms presentation backend (Fast Downward live demo)
+After=network.target
+
+[Service]
+Type=simple
+User=spider
+Group=spider
+WorkingDirectory=/srv/spider-axioms-presentation/web
+Environment=FD_SCRIPT=/srv/fast-downward/fast-downward.py
+Environment=PROJECT_ROOT=/srv/spider-axioms-presentation/pddl
+Environment=PORT=8000
+ExecStart=/usr/bin/python3 server.py
+Restart=on-failure
+RestartSec=3
+
+# Hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ReadWritePaths=/tmp
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+
+# Resource caps so a runaway FD run can't kill the box
+LimitNOFILE=4096
+MemoryMax=2G
+CPUQuota=180%
+
+[Install]
+WantedBy=multi-user.target

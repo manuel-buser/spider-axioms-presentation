@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Spider with Axioms — KR Seminar HS25</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- =========================================================================
+     Top progress dots
+     ===================================================================== -->
+<nav id="dots" aria-label="Slide navigation">
+  <button class="dot" data-target="0" aria-label="Slide 1"></button>
+  <button class="dot" data-target="1" aria-label="Slide 2"></button>
+  <button class="dot" data-target="2" aria-label="Slide 3"></button>
+  <button class="dot" data-target="3" aria-label="Slide 4"></button>
+</nav>
+
+<main id="deck">
+
+<!-- =========================================================================
+     SLIDE 1 — Title
+     ===================================================================== -->
+<section class="slide slide--title" data-slide="0">
+  <div class="title-grid">
+    <div class="title-text">
+      <p class="eyebrow">KR Seminar · HS25</p>
+      <h1>Spider with Axioms</h1>
+      <p class="subtitle">
+        Rewriting an IPC-2018 Solitaire domain with PDDL derived predicates
+      </p>
+      <hr class="accent-rule" />
+      <p class="author">Manuel Buser</p>
+      <p class="meta">Supervisor: Florian Pommerening</p>
+      <p class="meta">University of Basel</p>
+    </div>
+    <div class="title-stack">
+      <div class="badge badge--noax">no-axioms · 436 lines</div>
+      <div class="badge badge--ax">axioms · 301 lines</div>
+      <p class="badge-caption">smaller domain · half the operators</p>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================================
+     SLIDE 2 — Code comparisons (accordion)
+     ===================================================================== -->
+<section class="slide" data-slide="1">
+  <header class="slide-header">
+    <p class="eyebrow">The rewrite</p>
+    <h2>What changes in the PDDL?</h2>
+    <hr class="accent-rule" />
+    <p class="lede">
+      Click a row to expand the side-by-side. Each row shows the no-axioms
+      original (coral) next to the axiom-based replacement (teal).
+    </p>
+  </header>
+
+  <div class="accordion">
+
+    <!-- Section 1 — requirements line -->
+    <details class="cmp" open>
+      <summary>
+        <span class="cmp-num">1</span>
+        <span class="cmp-title">The <code>:requirements</code> line</span>
+        <span class="cmp-hint">conditional-effects → derived-predicates</span>
+      </summary>
+      <p class="cmp-caption">
+        The single-line declaration that switches the whole compilation
+        strategy. Everything else follows from this.
+      </p>
+      <div class="cmp-cols">
+        <pre class="code code--noax"><code>(:requirements
+    :typing
+    :conditional-effects
+    :action-costs
+    :negative-preconditions)</code></pre>
+        <pre class="code code--ax"><code>(:requirements
+    :typing
+    :derived-predicates
+    :disjunctive-preconditions
+    :existential-preconditions
+    :action-costs
+    :negative-preconditions)</code></pre>
+      </div>
+    </details>
+
+    <!-- Section 2 — move-to-card action -->
+    <details class="cmp">
+      <summary>
+        <span class="cmp-num">2</span>
+        <span class="cmp-title">The <code>move-to-card</code> action</span>
+        <span class="cmp-hint">conditional effects → direct effects only</span>
+      </summary>
+      <p class="cmp-caption">
+        Every real move in the no-axioms version <em>also</em> has to plant
+        propagation markers. The axiom version drops all that — the planner
+        re-derives <code>movable</code> / <code>part-of-tableau</code> on its
+        own.
+      </p>
+      <div class="cmp-cols">
+        <pre class="code code--noax"><code>(:action move-to-card
+  :parameters (?c - card ?from - card_or_tableau
+               ?to - card ?totableau - tableau)
+  :precondition
+  (and
+    (not (currently-updating-movable))
+    (not (currently-updating-unmovable))
+    (not (currently-collecting-deck))
+    (not (currently-updating-part-of-tableau))
+    (not (currently-dealing))
+    (movable ?c)  (in-play ?c)
+    (clear ?to)   (in-play ?to)
+    (part-of-tableau ?to ?totableau)
+    (CAN-BE-PLACED-ON ?c ?to)
+    (on ?c ?from))
+  :effect
+  (and
+    (not (on ?c ?from))  (on ?c ?to)
+    (not (clear ?to))    (clear ?from)
+    (when (not (CAN-CONTINUE-GROUP ?c ?from))
+      (and (currently-updating-movable)
+           (make-movable ?from)))
+    (when (not (CAN-CONTINUE-GROUP ?c ?to))
+      (and (currently-updating-unmovable)
+           (make-unmovable ?to)))
+    (currently-updating-part-of-tableau)
+    (make-part-of-tableau ?c ?totableau)
+    (increase (total-cost) 1)))</code></pre>
+        <pre class="code code--ax"><code>(:action move-to-card
+  :parameters (?c - card ?from - card_or_tableau
+               ?to - card ?totableau - tableau)
+  :precondition
+  (and
+    (not (currently-collecting-deck))
+    (not (currently-dealing))
+    (movable ?c)  (in-play ?c)
+    (clear ?to)   (in-play ?to)
+    (part-of-tableau ?to ?totableau)
+    (CAN-BE-PLACED-ON ?c ?to)
+    (on ?c ?from))
+  :effect
+  (and
+    (not (on ?c ?from))  (on ?c ?to)
+    (not (clear ?to))    (clear ?from)
+    (increase (total-cost) 1)))</code></pre>
+      </div>
+    </details>
+
+    <!-- Section 3 — propagation chain vs derived predicate -->
+    <details class="cmp">
+      <summary>
+        <span class="cmp-num">3</span>
+        <span class="cmp-title">Propagating <code>movable</code></span>
+        <span class="cmp-hint">8 zero-cost actions → 1 derived predicate</span>
+      </summary>
+      <p class="cmp-caption">
+        This is the heart of the rewrite. The eight propagation actions on
+        the left simulate a fixed-point evaluation. The axiom on the right
+        <em>is</em> that fixed-point evaluation — the planner does it
+        natively at every state.
+      </p>
+      <div class="cmp-cols">
+        <pre class="code code--noax"><code>(:action make-movable-and-continue
+  :parameters (?c - card ?next - card)
+  :precondition
+  (and (currently-updating-movable)
+       (not (currently-collecting-deck))
+       (on ?next ?c)
+       (make-movable ?c)
+       (CAN-CONTINUE-GROUP ?next ?c))
+  :effect
+  (and (movable ?c)
+       (not (make-movable ?c))
+       (make-movable ?next)))
+
+(:action make-movable-and-stop
+  :parameters (?c - card ?next - card)  ...)
+
+(:action make-movable-ignore-pile
+  :parameters (?c - card)  ...)
+
+(:action make-unmovable-and-continue ...)
+(:action make-unmovable-and-stop-at-tableau ...)
+(:action make-unmovable-and-stop-at-unmovable ...)
+
+;; plus change-tableau-and-continue,
+;;      change-tableau-and-stop
+;; — 8 zero-cost actions in total,
+;;   plus 4 control fluents and 3 marker
+;;   predicates to gate them.</code></pre>
+        <pre class="code code--ax"><code>(:derived (movable ?c - card)
+  (and
+    (in-play ?c)
+    (or
+      (clear ?c)
+      (exists (?above - card)
+        (and (on ?above ?c)
+             (movable ?above)
+             (CAN-CONTINUE-GROUP ?above ?c))))))
+
+
+;; Read this aloud:
+;;   "a card is movable if it is in play
+;;    and either it's on top, or some
+;;    movable card directly above it
+;;    continues its group."
+;;
+;; The recursion (movable ?above) is the
+;; fixed-point that the eight actions on
+;; the left simulate by hand.</code></pre>
+      </div>
+    </details>
+
+    <!-- Section 4 — transitive closure -->
+    <details class="cmp">
+      <summary>
+        <span class="cmp-num">4</span>
+        <span class="cmp-title">Transitive closure: <code>part-of-tableau</code></span>
+        <span class="cmp-hint">propagation actions → 4-line axiom</span>
+      </summary>
+      <p class="cmp-caption">
+        Same shape as section 3, for "which tableau does this card belong to?".
+        The axiom is the textbook one-rule definition of transitive closure.
+      </p>
+      <div class="cmp-cols">
+        <pre class="code code--noax"><code>(:action change-tableau-and-continue
+  :parameters (?c - card ?tbefore - tableau
+               ?t - tableau ?next - card)
+  :precondition
+  (and (currently-updating-part-of-tableau)
+       (not (currently-collecting-deck))
+       (on ?next ?c)
+       (make-part-of-tableau ?c ?t)
+       (part-of-tableau ?c ?tbefore))
+  :effect
+  (and (not (part-of-tableau ?c ?tbefore))
+       (part-of-tableau ?c ?t)
+       (not (make-part-of-tableau ?c ?t))
+       (make-part-of-tableau ?next ?t)))
+
+(:action change-tableau-and-stop
+  :parameters (?c - card ?tbefore - tableau
+               ?t - tableau)  ...)
+
+;; plus the make-part-of-tableau marker
+;; predicate, the currently-updating-*
+;; flag, and gating preconditions on
+;; every real action.</code></pre>
+        <pre class="code code--ax"><code>(:derived (part-of-tableau
+              ?c - card  ?t - tableau)
+  (or
+    (on ?c ?t)
+    (exists (?y - card)
+      (and (on ?c ?y)
+           (part-of-tableau ?y ?t)))))
+
+
+;; "card c is part of tableau t if it is
+;;  directly on t, or it is on some card y
+;;  that is already part of t."
+;;
+;; A four-line transitive closure.</code></pre>
+      </div>
+    </details>
+
+  </div>
+</section>
+
+<!-- =========================================================================
+     SLIDE 3 — Live demo
+     ===================================================================== -->
+<section class="slide" data-slide="2">
+  <header class="slide-header">
+    <p class="eyebrow">Live demo</p>
+    <h2>Same instance · two encodings · one race</h2>
+    <hr class="accent-rule" />
+    <p class="lede">
+      Both terminals run <code>fast-downward.py</code> on
+      <strong>opt&nbsp;p09</strong> with <code>A*(blind())</code>.
+      Streaming live from WSL.
+    </p>
+  </header>
+
+  <div class="demo-controls">
+    <button id="demo-run" class="btn-primary">▶ Start race</button>
+    <button id="demo-reset" class="btn-secondary" hidden>Reset</button>
+    <span id="demo-status" class="demo-status"></span>
+  </div>
+
+  <div class="demo-grid">
+    <!-- left pane -->
+    <div class="demo-pane" id="pane-noax">
+      <div class="pane-header pane-header--noax">
+        <span class="pane-title">no-axioms · A* + blind</span>
+        <span class="pane-timer" data-role="timer">0.00 s</span>
+      </div>
+      <pre class="pane-term" data-role="term"
+           aria-label="no-axioms output"></pre>
+      <div class="pane-summary" data-role="summary" hidden></div>
+    </div>
+
+    <!-- right pane -->
+    <div class="demo-pane" id="pane-ax">
+      <div class="pane-header pane-header--ax">
+        <span class="pane-title">axioms · A* + blind</span>
+        <span class="pane-timer" data-role="timer">0.00 s</span>
+      </div>
+      <pre class="pane-term" data-role="term"
+           aria-label="axioms output"></pre>
+      <div class="pane-summary" data-role="summary" hidden></div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================================
+     SLIDE 4 — Results
+     ===================================================================== -->
+<section class="slide" data-slide="3">
+  <header class="slide-header">
+    <p class="eyebrow">Results</p>
+    <h2>Measured impact across all instances</h2>
+    <hr class="accent-rule" />
+    <p class="lede">
+      Fast Downward, 13 instances, 5 min / 4 GB budget.
+    </p>
+  </header>
+
+  <div class="charts">
+    <figure class="chart-card">
+      <figcaption class="chart-title">
+        How big is the problem after grounding?
+      </figcaption>
+      <div id="chart-operators" class="chart-host"></div>
+      <p class="chart-legend">
+        <span class="swatch swatch--noax"></span> No-axioms encoding (compiled)
+        &nbsp;&nbsp;
+        <span class="swatch swatch--ax"></span> Axioms encoding (derived predicates)
+      </p>
+      <p class="chart-caption">
+        <strong>Lower is better.</strong>
+        Across all 13 instances the axioms encoding produces about half as
+        many grounded operators — the planner has less to search through.
+      </p>
+    </figure>
+
+    <figure class="chart-card">
+      <figcaption class="chart-title">
+        How long does optimal A* take?
+      </figcaption>
+      <div id="chart-walltime" class="chart-host"></div>
+      <p class="chart-legend">
+        <span class="swatch swatch--noax"></span> No-axioms · A* + LM-cut heuristic
+        &nbsp;&nbsp;
+        <span class="swatch swatch--ax"></span> Axioms · A* + h<sup>max</sup> heuristic
+      </p>
+      <p class="chart-caption">
+        <strong>Lower is faster.</strong> Both find the same optimal cost on
+        every solved instance — but the axioms encoding reaches it
+        <strong>4–9× quicker</strong>.
+      </p>
+    </figure>
+  </div>
+
+  <p class="results-footnote">
+    Satisficing (LAMA, 5 min): <strong>axioms 5 / 5</strong> vs
+    <strong>no-axioms 3 / 5</strong>.&nbsp;&nbsp;
+    Heuristics: <em>blind</em> = no guidance, <em>LM-cut</em> &amp;
+    <em>h<sup>max</sup></em> = admissible heuristics (LM-cut more
+    informative, but doesn't natively support axioms in this FD build).
+  </p>
+</section>
+
+</main>
+
+<!-- footer chrome -->
+<footer id="chrome">
+  <span class="chrome-left">Spider with Axioms · Manuel Buser · KR Seminar HS25</span>
+  <span class="chrome-right"><span id="chrome-page">1</span> / 4</span>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

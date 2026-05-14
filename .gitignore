@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+*.sas
+.DS_Store
+*.swp
+.idea/
+.vscode/
+node_modules/
