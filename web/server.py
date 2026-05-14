@@ -14,7 +14,7 @@ Configuration via env vars (sensible defaults below):
     PROJECT_ROOT    path to Spider_{Axioms,NoAxioms}/ on Linux
     PORT            HTTP port (default 8000)
 
-stdlib only — no pip install required.
+stdlib only , no pip install required.
 """
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 
 PORT          = int(os.environ.get("PORT", "8000"))
-# VPS defaults — override locally with env vars for dev
+# VPS defaults , override locally with env vars for dev
 FD_SCRIPT     = os.environ.get(
     "FD_SCRIPT",
     "/srv/fast-downward/fast-downward.py",
@@ -150,7 +150,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Connection", "keep-alive")
         self.end_headers()
 
-        # opening hello — confirms the stream is alive even before FD prints
+        # opening hello , confirms the stream is alive even before FD prints
         self._send_event("hello", {
             "encoding": enc, "instance": inst, "search": search_k,
             "cmd": " ".join(cmd),
@@ -171,7 +171,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 line = raw.rstrip("\n")
                 update_summary(summary, line)
                 if not self._send_event("line", {"line": line}):
-                    # browser disconnected — kill FD and bail
+                    # browser disconnected , kill FD and bail
                     proc.terminate()
                     return
             proc.wait()

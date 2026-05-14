@@ -1,4 +1,4 @@
-# Spider with Axioms — Presentation
+# Spider with Axioms , Presentation
 
 Interactive HTML presentation for an academic seminar on rewriting an
 IPC-2018 Spider Solitaire PDDL domain with derived predicates.

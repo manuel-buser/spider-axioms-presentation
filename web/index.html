@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Spider with Axioms — KR Seminar HS25</title>
+<title>Spider with Axioms , KR Seminar HS25</title>
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -21,7 +21,7 @@
 <main id="deck">
 
 <!-- =========================================================================
-     SLIDE 1 — Title
+     SLIDE 1 , Title
      ===================================================================== -->
 <section class="slide slide--title" data-slide="0">
   <div class="title-grid">
@@ -45,7 +45,7 @@
 </section>
 
 <!-- =========================================================================
-     SLIDE 2 — Code comparisons (accordion)
+     SLIDE 2 , Code comparisons (accordion)
      ===================================================================== -->
 <section class="slide" data-slide="1">
   <header class="slide-header">
@@ -60,7 +60,7 @@
 
   <div class="accordion">
 
-    <!-- Section 1 — requirements line -->
+    <!-- Section 1 , requirements line -->
     <details class="cmp" open>
       <summary>
         <span class="cmp-num">1</span>
@@ -87,7 +87,7 @@
       </div>
     </details>
 
-    <!-- Section 2 — move-to-card action -->
+    <!-- Section 2 , move-to-card action -->
     <details class="cmp">
       <summary>
         <span class="cmp-num">2</span>
@@ -96,7 +96,7 @@
       </summary>
       <p class="cmp-caption">
         Every real move in the no-axioms version <em>also</em> has to plant
-        propagation markers. The axiom version drops all that — the planner
+        propagation markers. The axiom version drops all that , the planner
         re-derives <code>movable</code> / <code>part-of-tableau</code> on its
         own.
       </p>
@@ -149,7 +149,7 @@
       </div>
     </details>
 
-    <!-- Section 3 — propagation chain vs derived predicate -->
+    <!-- Section 3 , propagation chain vs derived predicate -->
     <details class="cmp">
       <summary>
         <span class="cmp-num">3</span>
@@ -159,7 +159,7 @@
       <p class="cmp-caption">
         This is the heart of the rewrite. The eight propagation actions on
         the left simulate a fixed-point evaluation. The axiom on the right
-        <em>is</em> that fixed-point evaluation — the planner does it
+        <em>is</em> that fixed-point evaluation , the planner does it
         natively at every state.
       </p>
       <div class="cmp-cols">
@@ -188,7 +188,7 @@
 
 ;; plus change-tableau-and-continue,
 ;;      change-tableau-and-stop
-;; — 8 zero-cost actions in total,
+;; , 8 zero-cost actions in total,
 ;;   plus 4 control fluents and 3 marker
 ;;   predicates to gate them.</code></pre>
         <pre class="code code--ax"><code>(:derived (movable ?c - card)
@@ -214,7 +214,7 @@
       </div>
     </details>
 
-    <!-- Section 4 — transitive closure -->
+    <!-- Section 4 , transitive closure -->
     <details class="cmp">
       <summary>
         <span class="cmp-num">4</span>
@@ -270,7 +270,7 @@
 </section>
 
 <!-- =========================================================================
-     SLIDE 3 — Live demo
+     SLIDE 3 , Live demo
      ===================================================================== -->
 <section class="slide" data-slide="2">
   <header class="slide-header">
@@ -316,7 +316,7 @@
 </section>
 
 <!-- =========================================================================
-     SLIDE 4 — Results
+     SLIDE 4 , Results
      ===================================================================== -->
 <section class="slide" data-slide="3">
   <header class="slide-header">
@@ -342,7 +342,7 @@
       <p class="chart-caption">
         <strong>Lower is better.</strong>
         Across all 13 instances the axioms encoding produces about half as
-        many grounded operators — the planner has less to search through.
+        many grounded operators , the planner has less to search through.
       </p>
     </figure>
 
@@ -358,8 +358,8 @@
       </p>
       <p class="chart-caption">
         <strong>Lower is faster.</strong> Both find the same optimal cost on
-        every solved instance — but the axioms encoding reaches it
-        <strong>4–9× quicker</strong>.
+        every solved instance , but the axioms encoding reaches it
+        <strong>4,9× quicker</strong>.
       </p>
     </figure>
   </div>
@@ -374,6 +374,22 @@
 </section>
 
 </main>
+
+<!-- =========================================================================
+     Rate-limit modal (shown when nginx 429s a /api/run request)
+     ===================================================================== -->
+<div id="rate-limit-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal-card">
+    <h3 id="modal-title" class="modal-title">Hold on a moment</h3>
+    <p class="modal-body">
+      Each visitor can only start the race a couple of times per minute,
+      so the server stays safe from bots. Try again in about a minute.
+    </p>
+    <div class="modal-actions">
+      <button class="btn-primary" data-close-modal>Got it</button>
+    </div>
+  </div>
+</div>
 
 <!-- footer chrome -->
 <footer id="chrome">

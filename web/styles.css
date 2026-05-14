@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Spider with Axioms — HTML presentation styles
+   Spider with Axioms , HTML presentation styles
    Single-file CSS, no framework.
    ========================================================================== */
 
@@ -112,7 +112,7 @@ hr { border: 0; }
 }
 
 /* ==========================================================================
-   SLIDE 1 — title
+   SLIDE 1 , title
    ========================================================================== */
 .slide--title { padding: 0; }
 .slide--title::before {
@@ -162,7 +162,7 @@ hr { border: 0; }
 }
 
 /* ==========================================================================
-   SLIDE 2 — accordion
+   SLIDE 2 , accordion
    ========================================================================== */
 .accordion {
   display: flex; flex-direction: column;
@@ -237,7 +237,7 @@ hr { border: 0; }
 .code--ax   { background: var(--ax-bg);   border-color: var(--ax); }
 
 /* ==========================================================================
-   SLIDE 3 — live demo
+   SLIDE 3 , live demo
    ========================================================================== */
 .demo-controls {
   display: flex; align-items: center;
@@ -335,7 +335,7 @@ hr { border: 0; }
 }
 
 /* ==========================================================================
-   SLIDE 4 — results
+   SLIDE 4 , results
    ========================================================================== */
 .charts {
   display: grid;
@@ -405,6 +405,59 @@ hr { border: 0; }
   letter-spacing: 0.05em; font-weight: 600;
 }
 .svgchart .group-divider { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 3 3; }
+
+/* ==========================================================================
+   Rate-limit modal
+   ========================================================================== */
+.modal-overlay {
+  position: fixed; inset: 0;
+  z-index: 100;
+  display: grid; place-items: center;
+  background: rgb(15 20 30 / 55%);
+  backdrop-filter: blur(4px);
+  animation: modal-fade-in 180ms ease;
+  padding: 1rem;
+}
+@keyframes modal-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.modal-overlay[hidden] { display: none; }
+
+.modal-card {
+  max-width: 460px;
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  padding: 1.6rem 1.8rem 1.4rem;
+  box-shadow: 0 18px 60px rgb(15 20 30 / 22%);
+  text-align: center;
+}
+.modal-title {
+  margin: 0 0 0.6rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.modal-body {
+  margin: 0 0 1.2rem;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  color: var(--soft-ink);
+}
+.modal-actions {
+  display: flex;
+  justify-content: center;
+}
+.modal-actions .btn-primary {
+  background: var(--ax);
+  color: #fff;
+  border: 0;
+  padding: 0.55rem 1.4rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+.modal-actions .btn-primary:hover { background: #0c8676; }
 
 /* ---- responsive tighteners -------------------------------------------- */
 @media (max-width: 1024px) {

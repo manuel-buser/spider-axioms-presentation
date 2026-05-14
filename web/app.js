@@ -1,5 +1,5 @@
 /* ============================================================================
- * Spider with Axioms — HTML presentation
+ * Spider with Axioms , HTML presentation
  *   - slide navigation (← → / space / page-up/down / dot click)
  *   - SSE-driven live FD demo with side-by-side race
  *   - SVG bar charts on slide 4
@@ -123,7 +123,7 @@ function appendLine(termEl, text) {
 }
 
 function fmtTime(s) {
-  if (s == null || isNaN(s)) return "—";
+  if (s == null || isNaN(s)) return "-";
   return s.toFixed(2) + " s";
 }
 
@@ -135,9 +135,9 @@ function renderSummary(pane, data, isWinner) {
 
   const rows = [
     ["Total time",  fmtTime(data.total_time ?? data.wall_clock)],
-    ["Plan cost",   data.cost   ?? "—"],
-    ["Plan length", data.length ?? "—"],
-    ["Expanded",    data.expanded != null ? data.expanded.toLocaleString() : "—"],
+    ["Plan cost",   data.cost   ?? "-"],
+    ["Plan length", data.length ?? "-"],
+    ["Expanded",    data.expanded != null ? data.expanded.toLocaleString() : "-"],
   ];
 
   summary.innerHTML = rows.map(([k, v], idx) => `
@@ -154,16 +154,26 @@ function tearDown() {
   activeSources = [];
 }
 
+function abortRace(tickerId) {
+  if (tickerId != null) clearInterval(tickerId);
+  tearDown();
+  btnRun.disabled = false;
+  btnReset.hidden = true;
+  raceState = null;
+}
+
 function startRace() {
   resetPanes();
   btnRun.disabled = true;
   btnReset.hidden = true;
-  statusEl.textContent = "Connecting to WSL…";
+  statusEl.textContent = "Starting the race...";
 
   raceState = {
-    finished: new Set(),
-    results : {},
-    started : performance.now(),
+    finished      : new Set(),
+    results       : {},
+    started       : performance.now(),
+    helloReceived : new Set(),    // ids that produced at least one event
+    aborted       : false,
   };
 
   // ticker for the timers
@@ -176,8 +186,17 @@ function startRace() {
     }
   }, 100);
 
-  const startedAt = performance.now();
-  let connectedCount = 0;
+  // If either stream fails to even open within 4 s, assume rate-limit.
+  // (A successful connection sends 'hello' immediately, so this fires only
+  //  when nginx 429's us or the server is unreachable.)
+  const connectTimeoutId = setTimeout(() => {
+    if (!raceState || raceState.aborted) return;
+    if (raceState.helloReceived.size < 2) {
+      raceState.aborted = true;
+      abortRace(tickerId);
+      showRateLimitModal();
+    }
+  }, 4000);
 
   for (const { id, pane } of getPanes()) {
     const term    = pane.querySelector('[data-role="term"]');
@@ -189,8 +208,8 @@ function startRace() {
     activeSources.push(es);
 
     es.addEventListener("hello", (ev) => {
-      connectedCount++;
-      if (connectedCount === 2) statusEl.textContent = "Racing…";
+      raceState.helloReceived.add(id);
+      if (raceState.helloReceived.size === 2) statusEl.textContent = "Racing...";
       try {
         const data = JSON.parse(ev.data);
         appendLine(term, `$ ${data.cmd}`);
@@ -212,13 +231,14 @@ function startRace() {
       timerEl.textContent = fmtTime(data.total_time ?? data.wall_clock);
       es.close();
 
-      // Are we the first to finish?
+      // First to finish?
       const isWinner = raceState.finished.size === 1;
       renderSummary(pane, data, isWinner);
 
       // Both done?
       if (raceState.finished.size === 2) {
         clearInterval(tickerId);
+        clearTimeout(connectTimeoutId);
         btnReset.hidden = false;
         btnRun.disabled = false;
         const tNoax = raceState.results.noaxioms?.total_time;
@@ -235,16 +255,40 @@ function startRace() {
       }
     });
 
-    es.addEventListener("error", (ev) => {
-      // EventSource fires 'error' both for connection problems and natural close
-      if (es.readyState === EventSource.CLOSED) return;
-      appendLine(term, "[error] stream closed unexpectedly");
-      statusEl.textContent = "Stream error — is the WSL server running?";
-      btnRun.disabled = false;
-      es.close();
+    es.addEventListener("error", () => {
+      // EventSource fires 'error' both for HTTP errors and natural close.
+      // If we never received the opening 'hello', the connection failed
+      // (most likely nginx 429 rate-limit, or server unreachable).
+      const closed = es.readyState === EventSource.CLOSED;
+      if (!closed) return;
+      if (raceState && !raceState.helloReceived.has(id) && !raceState.aborted) {
+        raceState.aborted = true;
+        clearTimeout(connectTimeoutId);
+        abortRace(tickerId);
+        showRateLimitModal();
+      }
     });
   }
 }
+
+// ---------------------------------------------------------------------------
+// Rate-limit modal
+// ---------------------------------------------------------------------------
+function showRateLimitModal() {
+  const modal = document.getElementById("rate-limit-modal");
+  if (modal) modal.hidden = false;
+}
+function hideRateLimitModal() {
+  const modal = document.getElementById("rate-limit-modal");
+  if (modal) modal.hidden = true;
+}
+document.addEventListener("click", (e) => {
+  if (!(e.target instanceof Element)) return;
+  if (e.target.matches("[data-close-modal]")) hideRateLimitModal();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") hideRateLimitModal();
+});
 
 if (btnRun)   btnRun  .addEventListener("click", startRace);
 if (btnReset) btnReset.addEventListener("click", () => {

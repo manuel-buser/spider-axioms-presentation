@@ -2,7 +2,7 @@
 # Launch the Spider-axioms presentation server.
 #
 # Used for ad-hoc local runs. On the production VPS, the systemd unit
-# (../systemd/spider-axioms.service) is what runs server.py — not this script.
+# (../systemd/spider-axioms.service) is what runs server.py , not this script.
 
 set -euo pipefail
 cd "$(dirname "$0")"

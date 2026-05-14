@@ -1,5 +1,5 @@
 ;; ============================================================================
-;;  Spider domain — axiom-based reformulation
+;;  Spider domain , axiom-based reformulation
 ;;
 ;;  Rewrite of the IPC-2018 Spider domain (Spider_NoAxioms/domain.pddl) using
 ;;  PDDL :derived-predicates instead of the original simulation of derived
@@ -23,10 +23,10 @@
 ;;      make-* are stripped (no action may modify a derived predicate;
 ;;      Haslum et al. p. 73).
 ;;
-;;  Cost structure preserved exactly — only start-dealing, move-to-card,
+;;  Cost structure preserved exactly , only start-dealing, move-to-card,
 ;;  move-to-tableau, start-collecting-deck cost 1; everything else is 0.
 ;;  So plan cost on a problem instance must equal the cost of the corresponding
-;;  no-axioms instance — that's the equivalence test.
+;;  no-axioms instance , that's the equivalence test.
 ;; ============================================================================
 
 (define (domain spider-axioms)
